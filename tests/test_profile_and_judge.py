@@ -41,6 +41,8 @@ class UnitTests(unittest.TestCase):
         self.assertEqual([], parsed["main_contributions"])
         with self.assertRaises(ValueError):
             ResearchJudge.parse_response('{"relevance_score": 101, "priority": "urgent"}')
+        with self.assertRaises(ValueError):
+            ResearchJudge.parse_response('{"relevance_score": 0, "priority": "B", "recommended_action": "skim"}')
 
     def test_stable_title_hash_without_doi(self):
         a = stable_paper_id({"title": "A  Useful Paper"})

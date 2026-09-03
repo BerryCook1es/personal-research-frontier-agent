@@ -212,6 +212,9 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(0.0, papers[1]["semantic_score"])
         self.assertEqual(1, papers[0]["semantic_rank"])
 
+    def test_embedding_ranker_does_not_treat_orthogonal_vectors_as_half_relevant(self):
+        self.assertEqual(0.0, EmbeddingRanker._cosine([1.0, 0.0], [0.0, 1.0]))
+
     def test_openai_compatible_endpoint_normalization(self):
         root = "https://api.example.test/v1"
         self.assertEqual(root, normalize_openai_api_base(root + "/chat/completions"))

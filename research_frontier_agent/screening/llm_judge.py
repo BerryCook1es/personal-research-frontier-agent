@@ -24,9 +24,19 @@ REQUIRED_FIELDS: dict[str, Any] = {
 }
 VALID_PRIORITIES = {"A", "B", "C", "D", "Ignore"}
 VALID_ACTIONS = {"deep-read", "skim", "save", "ignore"}
+PRIORITY_SCORE_RANGES = {
+    "A": (85, 100),
+    "B": (65, 84),
+    "C": (45, 64),
+    "D": (25, 44),
+    "Ignore": (0, 24),
+}
+JUDGE_SCHEMA_VERSION = "2026-09-v2"
 
 
 class ResearchJudge:
+    cache_version = JUDGE_SCHEMA_VERSION
+
     def __init__(self, *, model: str, api_base: str, api_key: str,
                  temperature: float = 0.1, timeout: float = 60.0, retries: int = 3):
         if not model or not api_base or not api_key:
@@ -43,8 +53,10 @@ class ResearchJudge:
         return f"""Act as a rigorous research judge for a doctoral student. Return JSON only.
 
 Priority rubric: A=must read/directly relevant; B=transferable method; C=frontier awareness; D=background; Ignore=no clear value.
+Score bands are mandatory: A=85-100, B=65-84, C=45-64, D=25-44, Ignore=0-24.
 recommended_action must be deep-read, skim, save, or ignore.
 When a project matches, potential_use should name Related Work, Method, Experiment, Discussion, New Idea, or a concrete problem it may solve.
+If no active project is supplied, related_project must be an empty string. Never invent a project.
 
 Research profile:
 {profile.description}
@@ -76,6 +88,9 @@ Required JSON schema:
         result["relevance_score"] = max(0, min(100, int(result["relevance_score"])))
         if result["priority"] not in VALID_PRIORITIES:
             raise ValueError("Invalid priority")
+        minimum, maximum = PRIORITY_SCORE_RANGES[result["priority"]]
+        if not minimum <= result["relevance_score"] <= maximum:
+            raise ValueError(f"relevance_score is inconsistent with priority {result['priority']}")
         if result["recommended_action"] not in VALID_ACTIONS:
             raise ValueError("Invalid recommended_action")
         for list_field in ("matched_topics", "main_contributions"):
@@ -106,7 +121,10 @@ Required JSON schema:
                     retries=1,
                 )
                 raw = response["choices"][0]["message"]["content"]
-                return raw, self.parse_response(raw)
+                parsed = self.parse_response(raw)
+                if not projects:
+                    parsed["related_project"] = ""
+                return raw, parsed
             except Exception as exc:
                 last_error = exc
                 prompt += "\nYour previous response was invalid. Return a complete JSON object matching the schema exactly."
@@ -116,7 +134,7 @@ Required JSON schema:
 def fallback_judgment(paper: dict[str, Any]) -> dict[str, Any]:
     tier = paper.get("keyword_tier", "other")
     priority = {"core": "A", "proxy": "B", "eco": "C"}.get(tier, "Ignore")
-    score = {"core": 80, "proxy": 60, "eco": 40}.get(tier, 0)
+    score = {"core": 85, "proxy": 65, "eco": 45}.get(tier, 0)
     return {
         **REQUIRED_FIELDS,
         "relevance_score": score,

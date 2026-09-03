@@ -12,7 +12,7 @@ from .render import render_app, render_excel, render_notes, render_preview, rend
 from .render.common import output_paths
 from .screening.embedding_ranker import EmbeddingRanker
 from .screening.keyword_ranker import KeywordRanker
-from .screening.llm_judge import ResearchJudge, fallback_judgment
+from .screening.llm_judge import JUDGE_SCHEMA_VERSION, ResearchJudge, fallback_judgment
 from .storage import FrontierDatabase
 from .translation import Translator
 from .utils import read_json, stable_paper_id, write_json
@@ -27,8 +27,11 @@ def _dates(config: dict[str, Any]) -> tuple[str, str]:
     return from_date, to_date
 
 
-def _context_hash(profile: ResearchProfile, projects: list[ProjectContext], model: str) -> str:
-    source = profile.description + "\n" + "\n".join(project.to_prompt() for project in projects) + "\n" + model
+def _context_hash(profile: ResearchProfile, projects: list[ProjectContext], model: str, judge_version: str) -> str:
+    source = (
+        profile.description + "\n" + "\n".join(project.to_prompt() for project in projects)
+        + "\n" + model + "\n" + judge_version
+    )
     return hashlib.sha256(source.encode("utf-8")).hexdigest()
 
 
@@ -135,7 +138,7 @@ def run_pipeline(
                         api_base=config.get("semantic_scholar_api_base", "https://api.semanticscholar.org/graph/v1"),
                         max_results_per_query=int(config.get("semantic_scholar_max_results", 100)),
                         timeout=float(config.get("request_timeout", 30)),
-                        retries=int(config.get("request_retries", 3)),
+                        retries=int(config.get("semantic_scholar_request_retries", 5)),
                         sleep=float(config.get("semantic_scholar_request_sleep", 1.1)),
                     ))
             papers = []
@@ -230,7 +233,8 @@ def run_pipeline(
                 errors.append({"stage": "llm_judge", "error": str(exc), "fallback": "keyword-priority"})
                 judge_enabled = False
 
-        context_hash = _context_hash(profile, projects, config.get("llm_model", ""))
+        judge_version = getattr(judge, "cache_version", JUDGE_SCHEMA_VERSION)
+        context_hash = _context_hash(profile, projects, config.get("llm_model", ""), judge_version)
         for paper in papers:
             if paper not in candidates:
                 paper.update(fallback_judgment(paper))

@@ -50,7 +50,9 @@ class EmbeddingRanker:
         if not denominator:
             return 0.0
         raw = sum(x * y for x, y in zip(a, b)) / denominator
-        return max(0.0, min(1.0, (raw + 1.0) / 2.0))
+        # Negative cosine values are irrelevant, while positive cosine is already
+        # a useful 0-1 relevance scale for modern text-embedding models.
+        return max(0.0, min(1.0, raw))
 
     def rank(self, papers: list[dict[str, Any]], profile_description: str) -> list[dict[str, Any]]:
         if not papers:

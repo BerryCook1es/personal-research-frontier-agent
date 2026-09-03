@@ -14,6 +14,7 @@
   },
   "semantic_scholar_max_results": 100,
   "semantic_scholar_request_sleep": 1.1,
+  "semantic_scholar_request_retries": 5,
   "enrich": true,
   "embedding_enabled": false,
   "embedding_backend": "sentence-transformers",

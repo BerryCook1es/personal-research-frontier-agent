@@ -88,11 +88,12 @@ Semantic Scholar 发现配置使用独立 Key：
     "scholarly-kg-llm": ["scientific knowledge graph", "scientific information extraction"]
   },
   "semantic_scholar_max_results": 100,
-  "semantic_scholar_request_sleep": 1.1
+  "semantic_scholar_request_sleep": 1.1,
+  "semantic_scholar_request_retries": 5
 }
 ```
 
-查询按 Profile 选择，并用 `publicationDateOrYear` 限制本次日期窗口。默认查询间隔 1.1 秒，以适配新 API Key 常见的 1 RPS 初始额度；bulk search 返回后还会在客户端严格执行 `semantic_scholar_max_results` 上限，避免宽泛查询产生过多后续 LLM 调用。
+查询按 Profile 选择，并用 `publicationDateOrYear` 限制本次日期窗口。默认查询间隔 1.1 秒，以适配新 API Key 常见的 1 RPS 初始额度；遇到 429 会进行最多 5 次指数退避重试。bulk search 返回后还会在客户端严格执行 `semantic_scholar_max_results` 上限，避免宽泛查询产生过多后续 LLM 调用。
 
 OpenAI-compatible 地址既可填写 API 根地址（推荐，如 `https://api.siliconflow.cn/v1`），也可填写完整的 `/chat/completions` 或 `/embeddings` 端点；程序会规范化后调用正确资源。聊天与翻译请求发往 `chat/completions`，Embedding 请求发往 `embeddings`。
 

@@ -22,6 +22,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "semantic_scholar_queries": {},
     "semantic_scholar_max_results": 100,
     "semantic_scholar_request_sleep": 1.1,
+    "semantic_scholar_request_retries": 5,
     "enrich": False,
     "embedding_enabled": False,
     "embedding_backend": "sentence-transformers",
