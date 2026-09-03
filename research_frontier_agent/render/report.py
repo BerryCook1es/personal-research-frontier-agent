@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import html
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +21,16 @@ PROFILE_TOPICS = {
     "scientometrics-evaluation": "文献计量 / 科学计量 / 科研评价",
     "human-ai-algorithm": "人机交互 / 算法认知 / AI 使用行为",
 }
+
+
+def _issue_label(date_value: str) -> str:
+    """Return a stable monthly issue label from the report end date."""
+    try:
+        report_date = datetime.strptime(date_value, "%Y-%m-%d")
+    except (TypeError, ValueError):
+        report_date = datetime.now()
+    issue_number = ((report_date.day - 1) // 7) + 1
+    return f"{report_date.strftime('%B %Y')} Issue {issue_number}"
 
 
 def _value(paper: dict[str, Any], key: str, fallback: str = "") -> str:
@@ -118,6 +128,8 @@ def render_report(data: dict[str, Any], output_path: Path) -> Path:
     topic = str(profile.get("topic") or PROFILE_TOPICS.get(profile_name) or profile_name)
     today = date.today().isoformat()
     ref_date = str(coverage.get("to") or today)
+    issue_label = _issue_label(ref_date)
+    theme_class = profile_name if profile_name in PROFILE_TOPICS else "scholarly-kg-llm"
 
     priority_order = {"A": 0, "B": 1, "C": 2, "D": 3, "Ignore": 4}
     papers = sorted(
@@ -150,23 +162,25 @@ def render_report(data: dict[str, Any], output_path: Path) -> Path:
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>前沿论文追踪周报·Frontier Weekly</title>
 <style>
-:root{{--bg:#f2f4f7;--card-bg:#fff;--text:#1e293b;--text2:#64748b;--border:#dfe4ea;--radius:12px;--blue:#1e5a8a;--c-A:#c0392b;--c-B:#d68910;--c-C:#2980b9;--c-D:#7f8c8d;--c-Ignore:#b7c0c8}}
+:root{{--bg:#f2f4f7;--card-bg:#fff;--text:#1e293b;--text2:#64748b;--border:#dfe4ea;--radius:12px;--accent:#6f5eb6;--accent-dark:#453877;--accent-soft:#eee9fb;--header-start:#ddcff4;--header-mid:#c5b2e8;--header-end:#ac98d8;--c-A:#c0392b;--c-B:#d68910;--c-C:#2980b9;--c-D:#7f8c8d;--c-Ignore:#b7c0c8}}
+.theme-scientometrics-evaluation{{--accent:#526fae;--accent-dark:#354d82;--accent-soft:#e8eef9;--header-start:#d6d5f2;--header-mid:#b9b9e5;--header-end:#a3abd8}}.theme-human-ai-algorithm{{--accent:#9b557f;--accent-dark:#6d3859;--accent-soft:#f6e9f1;--header-start:#ead1e5;--header-mid:#d8afd0;--header-end:#c194bc}}
 *{{box-sizing:border-box}}html,body{{margin:0;padding:0}}body{{font-family:-apple-system,"Microsoft YaHei","PingFang SC","Noto Sans SC",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}}
-.app-header{{background:linear-gradient(135deg,#0f2b3d 0%,#1a4a6e 40%,#1e5a8a 100%);color:#fff;padding:22px 32px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15)}}
-.header-inner{{width:100%}}.container{{max-width:1100px;margin:0 auto}}.app-header h1{{font-size:1.5em;line-height:1.3;margin:0 0 4px;font-weight:750;letter-spacing:-.02em}}.subtitle{{font-size:.83em;color:rgba(255,255,255,.68)}}
-.header-filters{{display:flex;gap:10px;flex-wrap:wrap;margin-top:13px}}button{{font:inherit}}.stat-chip{{background:rgba(255,255,255,.12);color:#fff;padding:4px 14px;border-radius:20px;cursor:pointer;transition:all .2s;border:1px solid transparent;font-size:.84em;font-weight:500}}.stat-chip:hover{{background:rgba(255,255,255,.22);transform:translateY(-1px)}}.stat-chip.active{{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.45);box-shadow:0 0 0 2px rgba(255,255,255,.1)}}.stat-chip .num{{margin-left:4px;font-weight:700}}
-.container{{padding:20px 18px 42px}}.toolbar{{display:grid;grid-template-columns:minmax(280px,1fr) 170px 250px;gap:10px;margin-bottom:12px}}.search-box{{position:relative}}.search-icon{{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.5}}.search-box input,select{{width:100%;height:38px;border:1px solid var(--border);border-radius:24px;background:var(--card-bg);color:var(--text);font-size:13px}}.search-box input{{padding:9px 14px 9px 38px}}select{{padding:8px 32px 8px 13px;cursor:pointer}}.search-box input:focus,select:focus{{outline:none;border-color:#2980b9;box-shadow:0 0 0 3px rgba(41,128,185,.1)}}
-.filter-bar{{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:13px}}.pill,.sort-btn{{padding:6px 18px;border-radius:20px;border:1px solid var(--border);background:var(--card-bg);cursor:pointer;font-size:.86em;color:var(--text2);font-weight:500;transition:all .18s}}.pill:hover,.sort-btn:hover{{border-color:#2980b9;color:#2980b9}}.pill.active{{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}}.sort-btn.active{{background:#e8f0fe;border-color:#2980b9;color:#1a5276;font-weight:600}}.divider{{color:#cbd5e0;margin:0 4px}}.spacer{{flex:1}}#count{{color:var(--text2);font-size:.84em;font-weight:500}}
+.app-header{{background:linear-gradient(135deg,var(--header-start) 0%,var(--header-mid) 48%,var(--header-end) 100%);color:#30264f;padding:22px 32px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(69,56,119,.18);overflow:hidden}}.app-header::before{{content:"";position:absolute;inset:0;pointer-events:none;opacity:.42;background-image:radial-gradient(circle,rgba(255,255,255,.9) 0 1.5px,transparent 2px),linear-gradient(32deg,transparent 49.4%,rgba(255,255,255,.25) 49.8%,transparent 50.2%),linear-gradient(148deg,transparent 49.4%,rgba(255,255,255,.18) 49.8%,transparent 50.2%);background-size:120px 84px,240px 168px,240px 168px;background-position:18px 10px,18px 10px,18px 10px}}
+.header-inner{{width:100%;position:relative;z-index:1}}.container{{max-width:1100px;margin:0 auto}}.app-header h1{{font-size:1.5em;line-height:1.3;margin:0 0 5px;font-weight:750;letter-spacing:-.02em}}.identity-line,.subtitle{{font-size:.83em;color:rgba(48,38,79,.72)}}.identity-line{{font-weight:650;margin-bottom:1px}}.cookie-mark{{display:inline-block;margin-right:4px;filter:drop-shadow(0 1px 1px rgba(67,45,26,.12))}}
+.header-filters{{display:flex;gap:10px;flex-wrap:wrap;margin-top:13px}}button{{font:inherit}}.stat-chip{{background:rgba(255,255,255,.34);color:#382d5b;padding:4px 14px;border-radius:20px;cursor:pointer;transition:all .2s;border:1px solid rgba(69,56,119,.08);font-size:.84em;font-weight:500}}.stat-chip:hover{{background:rgba(255,255,255,.52);transform:translateY(-1px)}}.stat-chip.active{{background:rgba(255,255,255,.68);border-color:rgba(69,56,119,.25);box-shadow:0 0 0 2px rgba(255,255,255,.18)}}.stat-chip .num{{margin-left:4px;font-weight:700}}
+.container{{padding:20px 18px 42px}}.toolbar{{display:grid;grid-template-columns:minmax(280px,1fr) 170px 250px;gap:10px;margin-bottom:12px}}.search-box{{position:relative}}.search-icon{{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.5}}.search-box input,select{{width:100%;height:38px;border:1px solid var(--border);border-radius:24px;background:var(--card-bg);color:var(--text);font-size:13px}}.search-box input{{padding:9px 14px 9px 38px}}select{{padding:8px 32px 8px 13px;cursor:pointer}}.search-box input:focus,select:focus{{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}}
+.filter-bar{{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:13px}}.pill,.sort-btn{{padding:6px 18px;border-radius:20px;border:1px solid var(--border);background:var(--card-bg);cursor:pointer;font-size:.86em;color:var(--text2);font-weight:500;transition:all .18s}}.pill:hover,.sort-btn:hover{{border-color:var(--accent);color:var(--accent)}}.pill.active{{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}}.sort-btn.active{{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-dark);font-weight:600}}.divider{{color:#cbd5e0;margin:0 4px}}.spacer{{flex:1}}#count{{color:var(--text2);font-size:.84em;font-weight:500}}
 .paper-list{{display:flex;flex-direction:column;gap:12px}}.paper-card{{background:var(--card-bg);border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden;transition:box-shadow .25s,transform .15s;border-left:5px solid transparent;position:relative}}.paper-card:hover{{box-shadow:0 4px 20px rgba(0,0,0,.1);transform:translateY(-2px)}}.paper-card.priority-A{{border-left-color:var(--c-A)}}.paper-card.priority-B{{border-left-color:var(--c-B)}}.paper-card.priority-C{{border-left-color:var(--c-C)}}.paper-card.priority-D{{border-left-color:var(--c-D)}}.paper-card.priority-Ignore{{border-left-color:var(--c-Ignore);opacity:.86}}.paper-card.hidden{{display:none}}.card-body{{padding:16px 20px}}
-.card-badges{{display:flex;gap:7px;align-items:center;margin-bottom:9px;flex-wrap:wrap}}.badge{{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.72em;font-weight:600;line-height:1.4}}.badge-A{{background:#fadbd8;color:#922b21}}.badge-B{{background:#fef3cd;color:#9a6700}}.badge-C{{background:#d6eaf8;color:#1a5276}}.badge-D{{background:#e5e8e8;color:#566573}}.badge-Ignore{{background:#eceff1;color:#777}}.badge-pool{{background:#f1f5f9;color:#475569}}.badge-topic{{font-size:.69em;background:#e8f0fe;color:#1a5276;border:1px solid #c5d9f0}}.badge-score{{background:#edf6f9;color:#216869}}.badge-track{{background:#f5eef8;color:#6c3483}}.badge-project{{background:#e8f8f5;color:#0e6655}}.badge-source{{padding:2px 8px;background:#f7f8fa;color:#8a94a2;font-weight:500}}
-.card-title-en{{font-size:1.06em;font-weight:700;color:#1a3a4a;margin-bottom:2px;line-height:1.55}}.card-title-en a{{color:inherit;text-decoration:none}}.card-title-en a:hover{{color:#2980b9}}.card-title-cn{{font-size:.92em;color:#2c3e50;margin-bottom:9px;line-height:1.5;font-weight:400}}.card-meta{{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.8em;color:var(--text2);margin-bottom:7px}}.card-meta-item{{display:inline-flex;align-items:center}}.card-meta-dot{{width:4px;height:4px;border-radius:50%;background:#cbd5e0;flex-shrink:0}}.card-topics{{display:flex;gap:5px;flex-wrap:wrap}}
+.card-badges{{display:flex;gap:7px;align-items:center;margin-bottom:9px;flex-wrap:wrap}}.badge{{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.72em;font-weight:600;line-height:1.4}}.badge-A{{background:#fadbd8;color:#922b21}}.badge-B{{background:#fef3cd;color:#9a6700}}.badge-C{{background:#d6eaf8;color:#1a5276}}.badge-D{{background:#e5e8e8;color:#566573}}.badge-Ignore{{background:#eceff1;color:#777}}.badge-pool{{background:#f1f5f9;color:#475569}}.badge-topic{{font-size:.69em;background:var(--accent-soft);color:var(--accent-dark);border:1px solid color-mix(in srgb,var(--accent) 28%,white)}}.badge-score{{background:#edf6f9;color:#216869}}.badge-track{{background:#f5eef8;color:#6c3483}}.badge-project{{background:#e8f8f5;color:#0e6655}}.badge-source{{padding:2px 8px;background:#f7f8fa;color:#8a94a2;font-weight:500}}
+.card-title-en{{font-size:1.06em;font-weight:700;color:#1a3a4a;margin-bottom:2px;line-height:1.55}}.card-title-en a{{color:inherit;text-decoration:none}}.card-title-en a:hover{{color:var(--accent)}}.card-title-cn{{font-size:.92em;color:#2c3e50;margin-bottom:9px;line-height:1.5;font-weight:400}}.card-meta{{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.8em;color:var(--text2);margin-bottom:7px}}.card-meta-item{{display:inline-flex;align-items:center}}.card-meta-dot{{width:4px;height:4px;border-radius:50%;background:#cbd5e0;flex-shrink:0}}.card-topics{{display:flex;gap:5px;flex-wrap:wrap}}
 .card-abstract{{margin-top:10px;padding-top:10px;border-top:1px solid #eef1f5}}.card-abstract p{{margin:0;text-align:justify}}.abs-cn{{font-size:.88em;color:var(--text);line-height:1.72}}.abs-en{{font-size:.83em;color:var(--text2);line-height:1.62;margin-top:7px!important}}
-.research-analysis{{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;margin-top:14px;padding-top:12px;border-top:1px solid #eef1f5}}.analysis-item{{padding:4px 0 8px}}.analysis-item b{{display:block;color:#1a5276;font-size:.84em;margin-bottom:2px}}.analysis-item p,.analysis-item ul{{font-size:.85em;margin:0;color:#374151}}.analysis-item ul{{padding-left:20px}}.analysis-wide{{grid-column:1/-1}}.screening-evidence{{font-size:.75em;color:#94a3b8;margin-top:3px}}.card-actions{{display:flex;gap:16px;align-items:center;margin-top:10px}}.card-actions a,.copy-link{{font-size:.82em;color:#1e5a8a;text-decoration:none;font-weight:600}}.copy-link{{cursor:pointer;border:0;background:none;padding:0;color:#94a3b8}}.empty{{text-align:center;padding:80px 20px;color:#a8b2c0}}
+.research-analysis{{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;margin-top:14px;padding-top:12px;border-top:1px solid #eef1f5}}.analysis-item{{padding:4px 0 8px}}.analysis-item b{{display:block;color:var(--accent-dark);font-size:.84em;margin-bottom:2px}}.analysis-item p,.analysis-item ul{{font-size:.85em;margin:0;color:#374151}}.analysis-item ul{{padding-left:20px}}.analysis-wide{{grid-column:1/-1}}.screening-evidence{{font-size:.75em;color:#94a3b8;margin-top:3px}}.card-actions{{display:flex;gap:16px;align-items:center;margin-top:10px}}.card-actions a,.copy-link{{font-size:.82em;color:var(--accent);text-decoration:none;font-weight:600}}.copy-link{{cursor:pointer;border:0;background:none;padding:0;color:#94a3b8}}.empty{{text-align:center;padding:80px 20px;color:#a8b2c0}}
 .footer{{color:#999;margin-top:38px;font-size:.82em;text-align:center;border-top:1px solid #ddd;padding-top:15px}}.toast{{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:9px 22px;border-radius:24px;font-size:.84em;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none}}.toast.show{{opacity:1}}
 @media(max-width:760px){{.app-header{{padding:17px 16px;position:relative}}.app-header h1{{font-size:1.26em}}.container{{padding:14px 10px 30px}}.toolbar{{grid-template-columns:1fr}}.research-analysis{{grid-template-columns:1fr}}.analysis-wide{{grid-column:auto}}.card-body{{padding:13px 14px}}.divider{{display:none}}}}
-</style></head><body>
+</style></head><body class="theme-{html.escape(theme_class)}">
 <header class="app-header"><div class="header-inner">
   <h1>前沿论文追踪周报·Frontier Weekly</h1>
+  <div class="identity-line"><span class="cookie-mark" aria-hidden="true">🍪</span>BerryCook1es Research Radar · {html.escape(issue_label)}</div>
   <div class="subtitle">覆盖周期：{html.escape(str(coverage.get('from') or ''))} → {html.escape(ref_date)} · 主题：{html.escape(topic)}</div>
   <div class="header-filters"><button class="stat-chip active" data-priority="" onclick="filterByPriority('',this)">全部<span class="num">{len(papers)}</span></button>{priority_chips}</div>
 </div></header>
@@ -181,7 +195,7 @@ def render_report(data: dict[str, Any], output_path: Path) -> Path:
     <span class="divider">|</span><button class="sort-btn" data-sort="date-desc" onclick="setSort('date-desc',this)">最新优先</button><button class="sort-btn" data-sort="date-asc" onclick="setSort('date-asc',this)">最早优先</button><button class="sort-btn active" data-sort="priority" onclick="setSort('priority',this)">按级别</button><span class="spacer"></span><span id="count"></span>
   </div>
   <div id="list" class="paper-list">{cards}</div><div id="empty" class="empty" hidden>没有匹配的论文，请调整筛选条件。</div>
-  <div class="footer">生成日期：{today} · 主题配置：{html.escape(profile_name)} · LLM 判断请由研究者复核</div>
+  <div class="footer">Curated for <strong>BerryCook1es</strong> · <span>Personal Research Frontier Agent</span><br>生成日期：{today} · 主题配置：{html.escape(profile_name)} · LLM 判断请由研究者复核</div>
 </main><div id="toast" class="toast">链接已复制</div>
 <script>
 let activePriority='',activeDays=7,activeSort='priority';const refDate=new Date('{html.escape(ref_date)}T23:59:59');
