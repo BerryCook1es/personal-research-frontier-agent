@@ -198,14 +198,14 @@ def render_report(data: dict[str, Any], output_path: Path) -> Path:
   <div class="footer">Curated for <strong>BerryCook1es</strong> · <span>Personal Research Frontier Agent</span><br>生成日期：{today} · 主题配置：{html.escape(profile_name)} · LLM 判断请由研究者复核</div>
 </main><div id="toast" class="toast">链接已复制</div>
 <script>
-let activePriority='',activeDays=7,activeSort='priority';const refDate=new Date('{html.escape(ref_date)}T23:59:59');
+let activePriority='',activeDays=7,activeSort='priority';const refDate=new Date('{html.escape(ref_date)}T00:00:00');
 function filterByPriority(priority,btn){{activePriority=priority;document.querySelectorAll('.stat-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');applyFilters();}}
 function filterByDays(days,btn){{activeDays=days;document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));btn.classList.add('active');applyFilters();}}
 function setSort(sort,btn){{activeSort=sort;document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');applyFilters();}}
 function applyFilters(){{
   const query=document.getElementById('search').value.trim().toLowerCase(),source=document.getElementById('source-filter').value,venue=document.getElementById('venue-filter').value;
   const cards=[...document.querySelectorAll('.paper-card')];let visible=0;
-  cards.forEach(card=>{{const raw=card.dataset.date,pub=raw?new Date(raw+'T00:00:00'):null,diff=pub?(refDate-pub)/86400000:0;const show=(!activePriority||card.dataset.priority===activePriority)&&(!source||card.dataset.source===source)&&(!venue||card.dataset.venue===venue)&&(!query||card.dataset.search.includes(query))&&(activeDays===0||!pub||diff<=activeDays);card.classList.toggle('hidden',!show);if(show)visible++;}});
+  cards.forEach(card=>{{const raw=card.dataset.date,normalized=/^\d{{4}}-\d{{2}}$/.test(raw)?raw+'-01':raw,pub=normalized?new Date(normalized+'T00:00:00'):null,validDate=pub&&!Number.isNaN(pub.getTime()),diff=validDate?(refDate-pub)/86400000:0;const show=(!activePriority||card.dataset.priority===activePriority)&&(!source||card.dataset.source===source)&&(!venue||card.dataset.venue===venue)&&(!query||card.dataset.search.includes(query))&&(activeDays===0||!validDate||(diff>=0&&diff<=activeDays));card.classList.toggle('hidden',!show);if(show)visible++;}});
   const order={{A:0,B:1,C:2,D:3,Ignore:4}};cards.sort((a,b)=>activeSort==='date-asc'?a.dataset.date.localeCompare(b.dataset.date):activeSort==='date-desc'?b.dataset.date.localeCompare(a.dataset.date):(order[a.dataset.priority]-order[b.dataset.priority]||Number(b.dataset.relevance)-Number(a.dataset.relevance)));const list=document.getElementById('list');cards.forEach(card=>list.appendChild(card));
   document.getElementById('count').textContent=visible+' / '+cards.length+' 篇';document.getElementById('empty').hidden=visible!==0;
 }}

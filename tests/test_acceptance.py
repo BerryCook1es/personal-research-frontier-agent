@@ -265,6 +265,8 @@ class AcceptanceTests(unittest.TestCase):
         self.assertIn("Curated for <strong>BerryCook1es</strong> · <span>Personal Research Frontier Agent</span>", rendered)
         self.assertIn("stat-chip", rendered)
         self.assertIn("class=\"pill active\"", rendered)
+        self.assertIn("Number.isNaN(pub.getTime())", rendered)
+        self.assertIn("T00:00:00", rendered)
         self.assertNotIn("本周扫描", rendered)
         self.assertNotIn("Top 5", rendered)
         self.assertIn("D · 背景", rendered)
