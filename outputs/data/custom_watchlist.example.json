@@ -1,0 +1,378 @@
+[
+  {
+    "journal": "Nature",
+    "issn": "0028-0836",
+    "family": "Nature Portfolio",
+    "pool": "comprehensive-high-impact",
+    "scope_note": "综合顶刊，全量追踪。科学学（Dashun Wang等）、科研政策、科学计量相关论文。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Science",
+    "issn": "0036-8075",
+    "family": "AAAS",
+    "pool": "comprehensive-high-impact",
+    "scope_note": "综合顶刊，全量追踪。科学学、科研评估、科技政策相关论文。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Proceedings of the National Academy of Sciences",
+    "issn": "0027-8424",
+    "family": "NAS",
+    "pool": "comprehensive-high-impact",
+    "scope_note": "综合高影响力。任期制、科研职业生涯、科学学相关研究。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Nature Communications",
+    "issn": "2041-1723",
+    "family": "Nature Portfolio",
+    "pool": "comprehensive-high-impact",
+    "scope_note": "综合高影响力OA。集体动力学、科研职业生涯、COVID对科学家影响。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Nature Human Behaviour",
+    "issn": "2397-3374",
+    "family": "Nature Portfolio",
+    "pool": "comprehensive-high-impact",
+    "scope_note": "综合高影响力。科研资助、疫情对科学家影响、学术行为研究。",
+    "source": "custom-watchlist"
+  },
+
+  {
+    "journal": "World Patent Information",
+    "issn": "0172-2190",
+    "family": "Patent Analysis",
+    "pool": "patent-tech-mining",
+    "scope_note": "专利信息分析、IP分析、专利布局。Q2 IF=2.4。专利计量核心阵地。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Technological Forecasting and Social Change",
+    "issn": "0040-1625",
+    "family": "Innovation Studies",
+    "pool": "patent-tech-mining",
+    "scope_note": "技术预测、技术机会、技术创新。Elsevier。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Technovation",
+    "issn": "0166-4972",
+    "family": "Innovation Studies",
+    "pool": "patent-tech-mining",
+    "scope_note": "技术创新、研发管理、技术创业。Elsevier。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Technology Analysis & Strategic Management",
+    "issn": "0953-7325",
+    "family": "Innovation Studies",
+    "pool": "patent-tech-mining",
+    "scope_note": "技术分析、战略创新管理、技术预测。Taylor & Francis。",
+    "source": "custom-watchlist"
+  },
+
+  {
+    "journal": "Scientometrics",
+    "issn": "0138-9130",
+    "family": "Information Science",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "文献计量学与科学计量学核心期刊。Springer。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Journal of Informetrics",
+    "issn": "1751-1577",
+    "family": "Information Science",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "信息计量学与定量科学学核心期刊。Elsevier。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Journal of the Association for Information Science and Technology",
+    "issn": "2330-1635",
+    "family": "Information Science",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "信息科学顶刊，文献计量、学术交流方向。Wiley。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Quantitative Science Studies",
+    "issn": "2641-3337",
+    "family": "Information Science",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "定量科学学OA期刊。MIT Press。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Journal of Scientometric Research",
+    "issn": "2321-6654",
+    "family": "Information Science",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "科学计量研究、文献计量方法、科学图谱。Q3 IF=1.3。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Collnet Journal of Scientometrics and Information Management",
+    "issn": "2168-930X",
+    "family": "Information Science",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "科学计量学、网络计量学、信息管理。Taru Publications。Q3 IF=0.6。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Frontiers in Research Metrics and Analytics",
+    "issn": "2504-0537",
+    "family": "Information Science",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "科研指标、替代计量学、科学学指标。OA。Q2 IF=3.1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Journal of Data and Information Science",
+    "issn": "2096-157X",
+    "family": "Information Science",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "数据科学、信息计量学、学术数据分析。Q2。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Online Information Review",
+    "issn": "1468-4527",
+    "family": "Information Science",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "在线信息检索、数字图书馆、文献计量学。Q1 IF=3.8。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Learned Publishing",
+    "issn": "0953-1513",
+    "family": "Information Science",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "学术出版、同行评议、学术交流。Q1 IF=4.2。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Research Evaluation",
+    "issn": "0958-2029",
+    "family": "Science Policy",
+    "pool": "bibliometrics-evaluation",
+    "scope_note": "科研评估、评价体系、科学政策。Oxford。Q1。",
+    "source": "custom-watchlist"
+  },
+
+  {
+    "journal": "Research Policy",
+    "issn": "0048-7333",
+    "family": "Innovation Studies",
+    "pool": "science-policy-innovation",
+    "scope_note": "创新研究顶刊，科技政策、研发评估。Elsevier。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Science and Public Policy",
+    "issn": "0302-3427",
+    "family": "Science Policy",
+    "pool": "science-policy-innovation",
+    "scope_note": "科技政策、科研资助、创新政策。Oxford。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Government Information Quarterly",
+    "issn": "0740-624X",
+    "family": "Science Policy",
+    "pool": "science-policy-innovation",
+    "scope_note": "电子政务、信息政策、数字治理。Q1 IF=10.8。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Industry and Innovation",
+    "issn": "1366-2716",
+    "family": "Innovation Studies",
+    "pool": "science-policy-innovation",
+    "scope_note": "产业动态、创新经济学、部门创新体系。Taylor & Francis。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Journal of Knowledge Management",
+    "issn": "1367-3270",
+    "family": "Information Science",
+    "pool": "science-policy-innovation",
+    "scope_note": "知识管理、知识共享、组织学习。Q1 IF=9.5。",
+    "source": "custom-watchlist"
+  },
+
+  {
+    "journal": "Information Processing and Management",
+    "issn": "0306-4573",
+    "family": "Information Science",
+    "pool": "info-methods-datamining",
+    "scope_note": "文本挖掘、学术数据NLP、信息检索。Elsevier。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Journal of Information Science",
+    "issn": "0165-5515",
+    "family": "Information Science",
+    "pool": "info-methods-datamining",
+    "scope_note": "信息科学、文献计量学、知识组织。SAGE。Q2。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Journal of Documentation",
+    "issn": "0022-0418",
+    "family": "Information Science",
+    "pool": "info-methods-datamining",
+    "scope_note": "文献学理论、信息行为、文献计量学。Q2 IF=1.8。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Data and Information Management",
+    "issn": "2543-9251",
+    "family": "Information Science",
+    "pool": "info-methods-datamining",
+    "scope_note": "数据科学、信息管理、主题建模、期刊影响评估。Elsevier。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "International Journal of Information Management",
+    "issn": "0268-4012",
+    "family": "Information Science",
+    "pool": "info-methods-datamining",
+    "scope_note": "信息管理顶刊。涉及文献计量/文本挖掘/科技政策时纳入。Elsevier。Q1。",
+    "source": "custom-watchlist"
+  },
+
+  {
+    "journal": "Social Networks",
+    "issn": "0378-8733",
+    "family": "Network Science",
+    "pool": "complex-network-analysis",
+    "scope_note": "社会网络分析顶刊，方法论标杆。科研合作/引文网络直接对口。Elsevier。Q1 IF=2.4。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Applied Network Science",
+    "issn": "2364-8228",
+    "family": "Network Science",
+    "pool": "complex-network-analysis",
+    "scope_note": "应用网络科学OA期刊。跨学科网络方法，覆盖文献计量网络分析。Springer。ESCI IF=1.5。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Journal of Complex Networks",
+    "issn": "2051-1310",
+    "family": "Network Science",
+    "pool": "complex-network-analysis",
+    "scope_note": "复杂网络理论与方法。Oxford。Q3 IF=1.5。",
+    "source": "custom-watchlist"
+  },
+
+  {
+    "journal": "Semantic Web",
+    "issn": "1570-0844",
+    "family": "Knowledge Graph",
+    "pool": "knowledge-graph-semantic",
+    "scope_note": "知识图谱、本体工程、语义技术OA期刊。IOS Press。IF=3.0。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Journal of Web Semantics",
+    "issn": "1570-8268",
+    "family": "Knowledge Graph",
+    "pool": "knowledge-graph-semantic",
+    "scope_note": "语义网、知识图谱与AI交叉。Elsevier。IF=3.2。",
+    "source": "custom-watchlist"
+  },
+
+  {
+    "journal": "Computers in Human Behavior",
+    "issn": "0747-5632",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "技术/AI采纳、使用行为、人机交互核心期刊。Q1 IF=9+。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "AI & Society",
+    "issn": "0951-5666",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "AI社会影响、人机交互、算法文化。Springer。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Information & Management",
+    "issn": "0378-7206",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "IS期刊，AI采纳/组织AI研究强。Q1 IF=7.0。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Telematics and Informatics",
+    "issn": "0736-5853",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "数字行为、AI准备度、人机交互。Q1 IF=9.9。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Big Data & Society",
+    "issn": "2053-9517",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "数据/AI与社会、算法治理、数字实践。SAGE。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Nature Machine Intelligence",
+    "issn": "2522-5839",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "高影响力AI研究，含人机协作方向。Nature Portfolio。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "MIS Quarterly",
+    "issn": "0276-7783",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "IS顶刊，组织AI采纳、数字化转型。Q1 IF=7.3。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "International Journal of Human-Computer Studies",
+    "issn": "1071-5819",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "人机交互、用户体验、AI可用性。Elsevier。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Journal of Computer-Mediated Communication",
+    "issn": "1083-6101",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "计算机中介传播、AI/聊天机器人交互、生成式AI使用。Oxford。Q1。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "New Media & Society",
+    "issn": "1461-4448",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "新媒体使用行为、AI素养、日常AI采纳。SAGE。Q1 IF=4.6。",
+    "source": "custom-watchlist"
+  },
+  {
+    "journal": "Science, Technology, & Human Values",
+    "issn": "0162-2439",
+    "family": "AI Behavior",
+    "pool": "ai-usage-behavior",
+    "scope_note": "STS旗舰—AI/人类关系、算法文化、技术与社会。SAGE。Q1。",
+    "source": "custom-watchlist"
+  }
+]
+

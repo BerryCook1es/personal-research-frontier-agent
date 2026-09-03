@@ -1,0 +1,4 @@
+openpyxl
+deep-translator
+python-docx
+
