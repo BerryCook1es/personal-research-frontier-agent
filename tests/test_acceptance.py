@@ -125,7 +125,7 @@ class AcceptanceTests(unittest.TestCase):
         result = run_pipeline(config, providers=[FakeCrossrefProvider()], translator=translator)
         html_path = Path(result["paths"]["html"])
         self.assertTrue(html_path.exists())
-        self.assertIn("Weekly Research Brief", html_path.read_text(encoding="utf-8"))
+        self.assertIn("前沿论文追踪周报·Frontier Weekly", html_path.read_text(encoding="utf-8"))
         self.assertTrue(all(p.get("core_hits") is not None for p in result["all_candidates"]))
         self.assertTrue(any(p.get("title_cn", "").startswith("中译:") for p in result["all_candidates"]))
 
@@ -224,7 +224,7 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(root + "/chat/completions", openai_api_endpoint(root, "chat/completions"))
         self.assertEqual(root + "/embeddings", openai_api_endpoint(root + "/chat/completions", "embeddings"))
 
-    def test_html_report_keeps_upstream_style_and_background_candidates(self):
+    def test_html_report_matches_reference_style_and_keeps_all_candidates(self):
         output = self.root / "report.html"
         background = {
             **copy.deepcopy(SAMPLE_PAPERS[0]),
@@ -253,11 +253,19 @@ class AcceptanceTests(unittest.TestCase):
             "all_candidates": [background],
         }, output)
         rendered = output.read_text(encoding="utf-8")
-        self.assertIn("个人前沿论文追踪周报 / Weekly Research Brief", rendered)
-        self.assertIn("date-btn", rendered)
-        self.assertIn("stats-pools", rendered)
-        self.assertIn("其他候选 / Background &amp; Ignore", rendered)
-        self.assertIn("Methodological Value", rendered)
+        self.assertIn("前沿论文追踪周报·Frontier Weekly", rendered)
+        self.assertIn("覆盖周期：2026-09-02 → 2026-09-03", rendered)
+        self.assertIn("主题：学术文本挖掘 / 科学知识图谱 / LLM 与 Agent 方法", rendered)
+        self.assertIn("app-header", rendered)
+        self.assertIn("stat-chip", rendered)
+        self.assertIn("class=\"pill active\"", rendered)
+        self.assertNotIn("本周扫描", rendered)
+        self.assertNotIn("Top 5", rendered)
+        self.assertIn("D · 背景", rendered)
+        self.assertIn("可迁移价值", rendered)
+        self.assertNotIn("Methodological Value", rendered)
+        self.assertLess(rendered.index("中文摘要。"), rendered.index("研究问题"))
+        self.assertNotIn("中英文摘要", rendered)
         self.assertEqual(1, rendered.count('<article class="paper-card'))
 
     def test_feedback_import_updates_sqlite(self):

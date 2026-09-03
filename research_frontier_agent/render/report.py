@@ -5,15 +5,21 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from .common import POOL_LABELS, PRIORITY_LABELS
+from .common import POOL_LABELS
 
 
-SECTION_LABELS = {
-    "A": "A · 必读 / Must Read",
-    "B": "B · 方法 / Method",
-    "C": "C · 前沿 / Frontier",
-    "D": "D · 背景 / Background",
-    "Ignore": "暂不推荐 / Ignore",
+PRIORITY_LABELS = {
+    "A": "A · 必读",
+    "B": "B · 方法",
+    "C": "C · 前沿",
+    "D": "D · 背景",
+    "Ignore": "暂不推荐",
+}
+
+PROFILE_TOPICS = {
+    "scholarly-kg-llm": "学术文本挖掘 / 科学知识图谱 / LLM 与 Agent 方法",
+    "scientometrics-evaluation": "文献计量 / 科学计量 / 科研评价",
+    "human-ai-algorithm": "人机交互 / 算法认知 / AI 使用行为",
 }
 
 
@@ -45,161 +51,153 @@ def _card(paper: dict[str, Any]) -> str:
     link = _paper_link(paper)
     title_html = (
         f'<a href="{html.escape(link)}" target="_blank" rel="noopener">{title}</a>'
-        if link else title
+        if link
+        else title
     )
     project = str(paper.get("related_project") or "").strip()
     pool = str(paper.get("pool") or "")
+    source = str(paper.get("source") or "")
+    venue = str(paper.get("venue") or paper.get("journal") or "")
+    pub_date = str(paper.get("publication_date") or "")
+    relevance = int(paper.get("relevance_score") or 0)
+    semantic = paper.get("semantic_score")
+    semantic_text = "未启用" if semantic is None else f"{float(semantic):.3f}"
+
     contributions = "".join(
         f"<li>{html.escape(str(item))}</li>" for item in paper.get("main_contributions") or []
     ) or "<li>摘要信息不足或未提取到明确贡献。</li>"
     topics = paper.get("matched_topics") or paper.get("matched_keywords") or []
     topic_badges = "".join(_badge(str(topic), "badge-topic") for topic in topics[:6])
-    project_badge = _badge(f"Project · {project}", "badge-project") if project else ""
-    pool_badge = _badge(POOL_LABELS.get(pool, pool), "badge-pool") if pool else ""
-    semantic = paper.get("semantic_score")
-    semantic_text = "disabled" if semantic is None else f"{float(semantic):.3f}"
-    abstract_source = str(paper.get("abstract_source") or "")
-    source_note = _badge(f"Abstract · {abstract_source}", "badge-source") if abstract_source else ""
-    pub_date = _value(paper, "publication_date")
+    search_text = " ".join(
+        str(paper.get(key) or "")
+        for key in ("title", "title_cn", "authors", "venue", "journal", "research_track")
+    ).lower()
 
-    return f"""<article class="paper-card priority-{priority}" data-date="{pub_date}" data-priority="{priority}">
-  <div class="paper-title-en">{title_html}</div>
-  <div class="paper-title-cn">{_value(paper, 'title_cn', '中文标题暂缺')}</div>
-  <div class="badges">
-    {_badge(PRIORITY_LABELS.get(priority, priority), f'badge-{priority}')}
-    {_badge(f"Relevance · {paper.get('relevance_score', 0)}/100", 'badge-score')}
-    {_badge(str(paper.get('research_track') or ''), 'badge-track')}
-    {project_badge}{pool_badge}
+    return f"""<article class="paper-card priority-{priority}" data-date="{html.escape(pub_date)}" data-priority="{html.escape(priority)}" data-venue="{html.escape(venue)}" data-source="{html.escape(source)}" data-relevance="{relevance}" data-search="{html.escape(search_text)}">
+  <div class="card-body">
+    <div class="card-badges">
+      {_badge(PRIORITY_LABELS.get(priority, priority), f'badge-{priority}')}
+      {_badge(POOL_LABELS.get(pool, pool), f'badge-pool badge-pool-{pool}') if pool else ''}
+      {_badge(f'相关度 {relevance}/100', 'badge-score')}
+      {_badge(str(paper.get('research_track') or ''), 'badge-track')}
+      {_badge(f'项目 · {project}', 'badge-project') if project else ''}
+    </div>
+    <div class="card-title-en">{title_html}</div>
+    <div class="card-title-cn">{_value(paper, 'title_cn', '中文标题暂缺')}</div>
+    <div class="card-meta">
+      <span class="card-meta-item">{html.escape(pub_date or '?')}</span><span class="card-meta-dot"></span>
+      <span class="card-meta-item">{html.escape(venue or '?')}</span><span class="card-meta-dot"></span>
+      <span class="card-meta-item">{_value(paper, 'authors', '作者信息暂缺')}</span>
+      {_badge(f'摘要来源 · {str(paper.get("abstract_source") or "")}', 'badge-source') if paper.get('abstract_source') else ''}
+    </div>
+    <div class="card-topics">{topic_badges}</div>
+    <div class="card-abstract">
+      <p class="abs-cn">{_value(paper, 'abstract_cn', '中文摘要暂缺。')}</p>
+      <p class="abs-en" lang="en">{_value(paper, 'abstract', 'Abstract not available from configured providers.')}</p>
+    </div>
+    <div class="research-analysis">
+      <div class="analysis-item"><b>研究问题</b><p>{_value(paper, 'research_question', '摘要信息不足')}</p></div>
+      <div class="analysis-item"><b>核心方法</b><p>{_value(paper, 'method_summary', '摘要信息不足')}</p></div>
+      <div class="analysis-item analysis-wide"><b>主要贡献</b><ul>{contributions}</ul></div>
+      <div class="analysis-item"><b>推荐理由</b><p>{_value(paper, 'why_relevant', '未分析')}</p></div>
+      <div class="analysis-item"><b>可迁移价值</b><p>{_value(paper, 'methodological_value', '未发现明确可迁移价值')}</p></div>
+      <div class="analysis-item"><b>潜在用途</b><p>{_value(paper, 'potential_use', '暂未发现')}</p></div>
+      <div class="analysis-item"><b>阅读建议</b><p>{_value(paper, 'recommended_action', 'ignore')}</p></div>
+    </div>
+    <div class="screening-evidence">关键词层级：{_value(paper, 'keyword_tier', 'other')} · 语义得分：{semantic_text} · 命中词：{_value(paper, 'matched_keywords', '无')}</div>
+    <div class="card-actions">{f'<a href="{html.escape(link)}" target="_blank" rel="noopener">查看原文 DOI</a><button class="copy-link" type="button" data-link="{html.escape(link)}" onclick="copyLink(this)">复制链接</button>' if link else ''}</div>
   </div>
-  <div class="paper-meta">
-    <span class="meta-label">期刊/会议：</span>{_value(paper, 'venue', paper.get('journal', ''))}
-    <span class="dot">·</span>{pub_date}
-    <span class="dot">·</span><span class="meta-label">作者：</span>{_value(paper, 'authors', '未提供')}
-    {source_note}
-  </div>
-  <div class="paper-topics">{topic_badges}</div>
-  <section class="recommendation">
-    <div><b>为什么推荐 / Why Relevant</b><p>{_value(paper, 'why_relevant', '未分析')}</p></div>
-    <div><b>建议 / Recommended Action</b><p>{_value(paper, 'recommended_action', 'ignore')}</p></div>
-  </section>
-  <div class="analysis-grid">
-    <section><b>研究问题 / Research Question</b><p>{_value(paper, 'research_question', '摘要信息不足')}</p></section>
-    <section><b>核心方法 / Method</b><p>{_value(paper, 'method_summary', '摘要信息不足')}</p></section>
-    <section><b>可迁移方法价值 / Methodological Value</b><p>{_value(paper, 'methodological_value', '未发现明确可迁移价值')}</p></section>
-    <section><b>潜在用途 / Potential Use</b><p>{_value(paper, 'potential_use', '暂未发现')}</p></section>
-  </div>
-  <section><b>主要贡献 / Main Contributions</b><ul>{contributions}</ul></section>
-  <details class="abstracts"><summary>中英文摘要 / Abstract CN &amp; EN</summary>
-    <div class="paper-abstract-cn"><b>中文：</b>{_value(paper, 'abstract_cn', '中文摘要暂缺')}</div>
-    <div class="paper-abstract-en"><b>English:</b> {_value(paper, 'abstract', 'Abstract not available from configured providers.')}</div>
-  </details>
-  <div class="evidence">Keyword tier: {_value(paper, 'keyword_tier', 'other')} · Semantic: {semantic_text} · Matched: {_value(paper, 'matched_keywords', 'none')}</div>
 </article>"""
 
 
 def render_report(data: dict[str, Any], output_path: Path) -> Path:
     profile = data["profile"]
-    selected = data.get("report_papers") or []
-    all_candidates = data.get("all_candidates") or []
-    stats = data.get("stats") or {}
-    judged_stats = data.get("judged_stats") or stats
+    papers = data.get("all_candidates") or data.get("report_papers") or []
     coverage = data.get("coverage") or {}
-
-    sections = {
-        priority: [paper for paper in selected if paper.get("priority") == priority]
-        for priority in ("A", "B", "C")
-    }
-    sections["D"] = [paper for paper in all_candidates if paper.get("priority") == "D"]
-    sections["Ignore"] = [paper for paper in all_candidates if paper.get("priority") == "Ignore"]
-
-    top_five = sorted(selected, key=lambda paper: paper.get("relevance_score", 0), reverse=True)[:5]
-    top_html = "".join(
-        f"<li><b>{_value(paper, 'title_cn', paper.get('title', ''))}</b>"
-        f"<span>{_value(paper, 'why_relevant', '关键词召回候选')}</span></li>"
-        for paper in top_five
-    ) or "<li class=\"empty\">本窗口没有达到 A/B/C 推荐标准的论文；D 与 Ignore 候选仍保留在下方供核查。</li>"
-
-    pool_counts: dict[str, int] = {}
-    for paper in all_candidates:
-        pool = str(paper.get("pool") or "")
-        if pool:
-            pool_counts[pool] = pool_counts.get(pool, 0) + 1
-    pool_html = "".join(
-        _badge(f"{POOL_LABELS.get(pool, pool)} · {count}", "badge-pool")
-        for pool, count in sorted(pool_counts.items(), key=lambda item: -item[1])
-    )
-
-    section_html = []
-    for priority in ("A", "B", "C"):
-        papers = sections[priority]
-        cards = "".join(_card(paper) for paper in papers)
-        empty = '<p class="empty-section">本类别暂无论文。</p>' if not papers else ""
-        section_html.append(
-            f'<section class="priority-section" data-section="{priority}"><h2>{SECTION_LABELS[priority]} '
-            f'（<span class="section-count" data-count="{priority}">{len(papers)}</span>）</h2>{cards}{empty}</section>'
-        )
-
-    background_cards = "".join(_card(paper) for priority in ("D", "Ignore") for paper in sections[priority])
-    background_count = len(sections["D"]) + len(sections["Ignore"])
-    other_html = f"""<details class="other-section" open>
-  <summary>其他候选 / Background &amp; Ignore（<span class="section-count" data-count="other">{background_count}</span>）</summary>
-  {background_cards or '<p class="empty-section">暂无其他候选。</p>'}
-</details>"""
-
+    profile_name = str(profile.get("name") or "")
+    topic = str(profile.get("topic") or PROFILE_TOPICS.get(profile_name) or profile_name)
     today = date.today().isoformat()
-    ref_date = html.escape(str(coverage.get("to") or today))
+    ref_date = str(coverage.get("to") or today)
+
+    priority_order = {"A": 0, "B": 1, "C": 2, "D": 3, "Ignore": 4}
+    papers = sorted(
+        papers,
+        key=lambda paper: (
+            priority_order.get(str(paper.get("priority") or "Ignore"), 5),
+            -int(paper.get("relevance_score") or 0),
+            str(paper.get("publication_date") or ""),
+        ),
+    )
+    counts = {
+        priority: sum(1 for paper in papers if str(paper.get("priority") or "Ignore") == priority)
+        for priority in priority_order
+    }
+    priority_chips = "".join(
+        f'<button class="stat-chip" data-priority="{priority}" onclick="filterByPriority(\'{priority}\',this)">{label}<span class="num">{counts[priority]}</span></button>'
+        for priority, label in PRIORITY_LABELS.items()
+    )
+    venue_options = "".join(
+        f'<option value="{html.escape(venue)}">{html.escape(venue)}</option>'
+        for venue in sorted({str(p.get("venue") or p.get("journal") or "") for p in papers} - {""})
+    )
+    source_options = "".join(
+        f'<option value="{html.escape(source)}">{html.escape(source)}</option>'
+        for source in sorted({str(p.get("source") or "") for p in papers} - {""})
+    )
+    cards = "".join(_card(paper) for paper in papers)
+
     content = f"""<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>个人前沿论文追踪周报 · {html.escape(profile['name'])}</title>
+<title>前沿论文追踪周报·Frontier Weekly</title>
 <style>
-body{{font-family:-apple-system,"Microsoft YaHei","PingFang SC",system-ui,sans-serif;max-width:1100px;margin:0 auto;padding:20px;background:#f8f9fa;color:#2c3e50;line-height:1.65}}
-h1{{color:#1a5276;border-bottom:3px solid #2980b9;padding-bottom:8px;font-size:1.8em}}
-h2{{color:#2c3e50;margin-top:30px;padding:8px 0;border-bottom:1px solid #ddd}}
-a{{color:#2980b9;text-decoration:none}}a:hover{{text-decoration:underline}}
-.subtitle{{color:#607080;margin-top:-8px}}.stats{{background:#eaf2f8;padding:15px;border-radius:8px;margin:18px 0}}
-.stats-row{{display:flex;flex-wrap:wrap;gap:12px;align-items:center}}.stats-row strong{{font-size:1.05em}}
-.stats-pools{{margin-top:10px;padding-top:10px;border-top:1px dashed #bdc3c7}}
-.top-five{{background:white;border-left:4px solid #2980b9;padding:12px 18px;border-radius:6px}}.top-five li{{margin:8px 0}}.top-five li span{{display:block;color:#65717f;font-size:.9em}}
-.date-filter{{text-align:center;margin:18px 0}}.date-btn{{padding:5px 15px;margin:0 4px;border:1px solid #bdc3c7;border-radius:15px;background:white;color:#555;cursor:pointer}}.date-btn.active{{background:#2980b9;color:white;border-color:#2980b9}}
-.paper-card{{background:white;padding:16px 18px;margin:12px 0;border-radius:6px;border-left:5px solid #95a5a6;box-shadow:0 1px 5px #20305012}}
-.priority-A{{background:#fff4f0;border-left-color:#d4380d}}.priority-B{{background:#fef9e7;border-left-color:#f39c12}}.priority-C{{background:#ebf5fb;border-left-color:#2980b9}}.priority-D{{background:#f4f6f7;border-left-color:#7f8c8d}}.priority-Ignore{{background:#fafafa;border-left-color:#bdc3c7}}
-.paper-title-en{{font-weight:bold;font-size:1.02em;color:#4d5966}}.paper-title-cn{{font-weight:bold;font-size:1.12em;color:#1a5276;margin:3px 0 7px}}
-.badges{{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}}.badge{{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.76em;border:1px solid #d7dde4;background:white}}
-.badge-A{{background:#d4380d;color:white;border-color:#d4380d}}.badge-B{{background:#f39c12;color:white;border-color:#f39c12}}.badge-C{{background:#2980b9;color:white;border-color:#2980b9}}.badge-D{{background:#7f8c8d;color:white;border-color:#7f8c8d}}.badge-Ignore{{background:#bdc3c7;color:#34495e}}
-.badge-topic{{background:#e8f0fe;color:#1a5276;border-color:#bdd7ee}}.badge-pool{{color:#6c3483;border-color:#c39bd3}}.badge-project{{color:#1e8449;border-color:#7dcea0}}.badge-source{{margin-left:5px;color:#777}}
-.paper-meta{{color:#777;font-size:.87em;margin:7px 0}}.meta-label{{color:#999}}.dot{{margin:0 6px}}.paper-topics{{margin-bottom:8px}}
-.recommendation{{display:grid;grid-template-columns:2fr 1fr;gap:12px;background:#fffdf2;border:1px solid #f4e6a6;border-radius:6px;padding:10px 12px;margin:10px 0}}
-.analysis-grid{{display:grid;grid-template-columns:1fr 1fr;gap:10px}}section p{{margin:.25em 0}}section ul{{margin-top:.3em}}
-.analysis-grid section{{padding:9px 11px;background:#f8fafc;border-radius:5px}}.abstracts{{background:#f8fafc;padding:9px 12px;border-radius:6px;margin-top:10px}}
-.abstracts summary,.other-section summary{{cursor:pointer;font-weight:bold;color:#1a5276}}.paper-abstract-cn,.paper-abstract-en{{padding-left:9px;border-left:2px solid #bdc3c7;margin-top:9px}}.paper-abstract-en{{color:#666;border-left-color:#ecf0f1;font-size:.9em}}
-.evidence{{color:#82909f;font-size:.82em;margin-top:10px}}.empty,.empty-section{{color:#8b96a3;font-style:italic}}.other-section{{margin-top:30px;padding-top:8px;border-top:1px solid #ddd}}.other-section>summary{{font-size:1.25em}}
-.paper-card.hidden{{display:none}}footer{{color:#999;margin-top:40px;font-size:.84em;text-align:center;border-top:1px solid #ddd;padding-top:15px}}
-@media(max-width:760px){{body{{padding:12px}}.analysis-grid,.recommendation{{grid-template-columns:1fr}}.paper-card{{padding:13px}}}}
+:root{{--bg:#f2f4f7;--card-bg:#fff;--text:#1e293b;--text2:#64748b;--border:#dfe4ea;--radius:12px;--blue:#1e5a8a;--c-A:#c0392b;--c-B:#d68910;--c-C:#2980b9;--c-D:#7f8c8d;--c-Ignore:#b7c0c8}}
+*{{box-sizing:border-box}}html,body{{margin:0;padding:0}}body{{font-family:-apple-system,"Microsoft YaHei","PingFang SC","Noto Sans SC",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}}
+.app-header{{background:linear-gradient(135deg,#0f2b3d 0%,#1a4a6e 40%,#1e5a8a 100%);color:#fff;padding:22px 32px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15)}}
+.header-inner{{width:100%}}.container{{max-width:1100px;margin:0 auto}}.app-header h1{{font-size:1.5em;line-height:1.3;margin:0 0 4px;font-weight:750;letter-spacing:-.02em}}.subtitle{{font-size:.83em;color:rgba(255,255,255,.68)}}
+.header-filters{{display:flex;gap:10px;flex-wrap:wrap;margin-top:13px}}button{{font:inherit}}.stat-chip{{background:rgba(255,255,255,.12);color:#fff;padding:4px 14px;border-radius:20px;cursor:pointer;transition:all .2s;border:1px solid transparent;font-size:.84em;font-weight:500}}.stat-chip:hover{{background:rgba(255,255,255,.22);transform:translateY(-1px)}}.stat-chip.active{{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.45);box-shadow:0 0 0 2px rgba(255,255,255,.1)}}.stat-chip .num{{margin-left:4px;font-weight:700}}
+.container{{padding:20px 18px 42px}}.toolbar{{display:grid;grid-template-columns:minmax(280px,1fr) 170px 250px;gap:10px;margin-bottom:12px}}.search-box{{position:relative}}.search-icon{{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.5}}.search-box input,select{{width:100%;height:38px;border:1px solid var(--border);border-radius:24px;background:var(--card-bg);color:var(--text);font-size:13px}}.search-box input{{padding:9px 14px 9px 38px}}select{{padding:8px 32px 8px 13px;cursor:pointer}}.search-box input:focus,select:focus{{outline:none;border-color:#2980b9;box-shadow:0 0 0 3px rgba(41,128,185,.1)}}
+.filter-bar{{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:13px}}.pill,.sort-btn{{padding:6px 18px;border-radius:20px;border:1px solid var(--border);background:var(--card-bg);cursor:pointer;font-size:.86em;color:var(--text2);font-weight:500;transition:all .18s}}.pill:hover,.sort-btn:hover{{border-color:#2980b9;color:#2980b9}}.pill.active{{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}}.sort-btn.active{{background:#e8f0fe;border-color:#2980b9;color:#1a5276;font-weight:600}}.divider{{color:#cbd5e0;margin:0 4px}}.spacer{{flex:1}}#count{{color:var(--text2);font-size:.84em;font-weight:500}}
+.paper-list{{display:flex;flex-direction:column;gap:12px}}.paper-card{{background:var(--card-bg);border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden;transition:box-shadow .25s,transform .15s;border-left:5px solid transparent;position:relative}}.paper-card:hover{{box-shadow:0 4px 20px rgba(0,0,0,.1);transform:translateY(-2px)}}.paper-card.priority-A{{border-left-color:var(--c-A)}}.paper-card.priority-B{{border-left-color:var(--c-B)}}.paper-card.priority-C{{border-left-color:var(--c-C)}}.paper-card.priority-D{{border-left-color:var(--c-D)}}.paper-card.priority-Ignore{{border-left-color:var(--c-Ignore);opacity:.86}}.paper-card.hidden{{display:none}}.card-body{{padding:16px 20px}}
+.card-badges{{display:flex;gap:7px;align-items:center;margin-bottom:9px;flex-wrap:wrap}}.badge{{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.72em;font-weight:600;line-height:1.4}}.badge-A{{background:#fadbd8;color:#922b21}}.badge-B{{background:#fef3cd;color:#9a6700}}.badge-C{{background:#d6eaf8;color:#1a5276}}.badge-D{{background:#e5e8e8;color:#566573}}.badge-Ignore{{background:#eceff1;color:#777}}.badge-pool{{background:#f1f5f9;color:#475569}}.badge-topic{{font-size:.69em;background:#e8f0fe;color:#1a5276;border:1px solid #c5d9f0}}.badge-score{{background:#edf6f9;color:#216869}}.badge-track{{background:#f5eef8;color:#6c3483}}.badge-project{{background:#e8f8f5;color:#0e6655}}.badge-source{{padding:2px 8px;background:#f7f8fa;color:#8a94a2;font-weight:500}}
+.card-title-en{{font-size:1.06em;font-weight:700;color:#1a3a4a;margin-bottom:2px;line-height:1.55}}.card-title-en a{{color:inherit;text-decoration:none}}.card-title-en a:hover{{color:#2980b9}}.card-title-cn{{font-size:.92em;color:#2c3e50;margin-bottom:9px;line-height:1.5;font-weight:400}}.card-meta{{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.8em;color:var(--text2);margin-bottom:7px}}.card-meta-item{{display:inline-flex;align-items:center}}.card-meta-dot{{width:4px;height:4px;border-radius:50%;background:#cbd5e0;flex-shrink:0}}.card-topics{{display:flex;gap:5px;flex-wrap:wrap}}
+.card-abstract{{margin-top:10px;padding-top:10px;border-top:1px solid #eef1f5}}.card-abstract p{{margin:0;text-align:justify}}.abs-cn{{font-size:.88em;color:var(--text);line-height:1.72}}.abs-en{{font-size:.83em;color:var(--text2);line-height:1.62;margin-top:7px!important}}
+.research-analysis{{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;margin-top:14px;padding-top:12px;border-top:1px solid #eef1f5}}.analysis-item{{padding:4px 0 8px}}.analysis-item b{{display:block;color:#1a5276;font-size:.84em;margin-bottom:2px}}.analysis-item p,.analysis-item ul{{font-size:.85em;margin:0;color:#374151}}.analysis-item ul{{padding-left:20px}}.analysis-wide{{grid-column:1/-1}}.screening-evidence{{font-size:.75em;color:#94a3b8;margin-top:3px}}.card-actions{{display:flex;gap:16px;align-items:center;margin-top:10px}}.card-actions a,.copy-link{{font-size:.82em;color:#1e5a8a;text-decoration:none;font-weight:600}}.copy-link{{cursor:pointer;border:0;background:none;padding:0;color:#94a3b8}}.empty{{text-align:center;padding:80px 20px;color:#a8b2c0}}
+.footer{{color:#999;margin-top:38px;font-size:.82em;text-align:center;border-top:1px solid #ddd;padding-top:15px}}.toast{{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:9px 22px;border-radius:24px;font-size:.84em;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none}}.toast.show{{opacity:1}}
+@media(max-width:760px){{.app-header{{padding:17px 16px;position:relative}}.app-header h1{{font-size:1.26em}}.container{{padding:14px 10px 30px}}.toolbar{{grid-template-columns:1fr}}.research-analysis{{grid-template-columns:1fr}}.analysis-wide{{grid-column:auto}}.card-body{{padding:13px 14px}}.divider{{display:none}}}}
 </style></head><body>
-<h1>个人前沿论文追踪周报 / Weekly Research Brief</h1>
-<p class="subtitle">Profile：<b>{html.escape(profile['name'])}</b> · {html.escape(str(coverage.get('from', '')))} → {ref_date}</p>
-<div class="stats"><div class="stats-row">
-  <strong>本周扫描：{judged_stats.get('scanned', 0)}</strong><strong>候选：{judged_stats.get('candidates', 0)}</strong>
-  <strong>A 必读：{stats.get('A', 0)}</strong><strong>B 方法：{stats.get('B', 0)}</strong><strong>C 前沿：{stats.get('C', 0)}</strong>
-  <span>D 背景：{judged_stats.get('D', 0)}</span><span>Ignore：{judged_stats.get('Ignore', 0)}</span>
-</div><div class="stats-row stats-pools">{pool_html}</div></div>
-<h2>Top 5 推荐理由</h2><ol class="top-five">{top_html}</ol>
-<div class="date-filter"><span>时间范围：</span><button class="date-btn active" data-days="7" onclick="filterByDays(7,this)">近 7 天</button><button class="date-btn" data-days="30" onclick="filterByDays(30,this)">近 30 天</button><button class="date-btn" data-days="0" onclick="filterByDays(0,this)">全部</button></div>
-{''.join(section_html)}{other_html}
-<footer>生成日期：{today} · Profile：{html.escape(profile['name'])} · 数据来自配置的学术数据源，LLM 判断请由研究者复核。</footer>
+<header class="app-header"><div class="header-inner">
+  <h1>前沿论文追踪周报·Frontier Weekly</h1>
+  <div class="subtitle">覆盖周期：{html.escape(str(coverage.get('from') or ''))} → {html.escape(ref_date)} · 主题：{html.escape(topic)}</div>
+  <div class="header-filters"><button class="stat-chip active" data-priority="" onclick="filterByPriority('',this)">全部<span class="num">{len(papers)}</span></button>{priority_chips}</div>
+</div></header>
+<main class="container">
+  <div class="toolbar">
+    <label class="search-box"><span class="search-icon">⌕</span><input id="search" type="search" placeholder="搜索标题、期刊、作者或研究方向" oninput="applyFilters()"></label>
+    <select id="source-filter" onchange="applyFilters()"><option value="">全部来源</option>{source_options}</select>
+    <select id="venue-filter" onchange="applyFilters()"><option value="">全部期刊 / 会议</option>{venue_options}</select>
+  </div>
+  <div class="filter-bar">
+    <button class="pill active" data-days="7" onclick="filterByDays(7,this)">近 7 天</button><button class="pill" data-days="30" onclick="filterByDays(30,this)">近 30 天</button><button class="pill" data-days="0" onclick="filterByDays(0,this)">全部时间</button>
+    <span class="divider">|</span><button class="sort-btn" data-sort="date-desc" onclick="setSort('date-desc',this)">最新优先</button><button class="sort-btn" data-sort="date-asc" onclick="setSort('date-asc',this)">最早优先</button><button class="sort-btn active" data-sort="priority" onclick="setSort('priority',this)">按级别</button><span class="spacer"></span><span id="count"></span>
+  </div>
+  <div id="list" class="paper-list">{cards}</div><div id="empty" class="empty" hidden>没有匹配的论文，请调整筛选条件。</div>
+  <div class="footer">生成日期：{today} · 主题配置：{html.escape(profile_name)} · LLM 判断请由研究者复核</div>
+</main><div id="toast" class="toast">链接已复制</div>
 <script>
-function filterByDays(days,btn){{
-  document.querySelectorAll('.date-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
-  const refDate=new Date('{ref_date}T23:59:59');const counts={{A:0,B:0,C:0,other:0}};
-  document.querySelectorAll('.paper-card').forEach(card=>{{
-    const raw=card.dataset.date;const pub=raw?new Date(raw):null;const diff=pub?(refDate-pub)/86400000:0;
-    const visible=days===0||!pub||diff<=days;card.classList.toggle('hidden',!visible);
-    if(visible){{const p=card.dataset.priority;counts[p]!==undefined?counts[p]++:counts.other++;}}
-  }});
-  ['A','B','C'].forEach(p=>{{const el=document.querySelector('[data-count="'+p+'"]');if(el)el.textContent=counts[p];}});
-  const other=document.querySelector('[data-count="other"]');if(other)other.textContent=counts.other;
+let activePriority='',activeDays=7,activeSort='priority';const refDate=new Date('{html.escape(ref_date)}T23:59:59');
+function filterByPriority(priority,btn){{activePriority=priority;document.querySelectorAll('.stat-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');applyFilters();}}
+function filterByDays(days,btn){{activeDays=days;document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));btn.classList.add('active');applyFilters();}}
+function setSort(sort,btn){{activeSort=sort;document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');applyFilters();}}
+function applyFilters(){{
+  const query=document.getElementById('search').value.trim().toLowerCase(),source=document.getElementById('source-filter').value,venue=document.getElementById('venue-filter').value;
+  const cards=[...document.querySelectorAll('.paper-card')];let visible=0;
+  cards.forEach(card=>{{const raw=card.dataset.date,pub=raw?new Date(raw+'T00:00:00'):null,diff=pub?(refDate-pub)/86400000:0;const show=(!activePriority||card.dataset.priority===activePriority)&&(!source||card.dataset.source===source)&&(!venue||card.dataset.venue===venue)&&(!query||card.dataset.search.includes(query))&&(activeDays===0||!pub||diff<=activeDays);card.classList.toggle('hidden',!show);if(show)visible++;}});
+  const order={{A:0,B:1,C:2,D:3,Ignore:4}};cards.sort((a,b)=>activeSort==='date-asc'?a.dataset.date.localeCompare(b.dataset.date):activeSort==='date-desc'?b.dataset.date.localeCompare(a.dataset.date):(order[a.dataset.priority]-order[b.dataset.priority]||Number(b.dataset.relevance)-Number(a.dataset.relevance)));const list=document.getElementById('list');cards.forEach(card=>list.appendChild(card));
+  document.getElementById('count').textContent=visible+' / '+cards.length+' 篇';document.getElementById('empty').hidden=visible!==0;
 }}
-document.addEventListener('DOMContentLoaded',()=>filterByDays(7,document.querySelector('[data-days="7"]')));
+async function copyLink(btn){{try{{await navigator.clipboard.writeText(btn.dataset.link);showToast('链接已复制');}}catch(_err){{showToast('复制失败，请打开原文后复制地址');}}}}
+function showToast(message){{const toast=document.getElementById('toast');toast.textContent=message;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1600);}}
+document.addEventListener('DOMContentLoaded',applyFilters);
 </script></body></html>"""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(content, encoding="utf-8")
