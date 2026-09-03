@@ -10,6 +10,7 @@ from pathlib import Path
 from research_frontier_agent.config import load_config
 from research_frontier_agent.pipeline import run_pipeline
 from research_frontier_agent.providers.base import PaperProvider
+from research_frontier_agent.render.report import render_report
 from research_frontier_agent.screening.embedding_ranker import EmbeddingRanker
 from research_frontier_agent.storage import FrontierDatabase
 from research_frontier_agent.translation import Translator
@@ -222,6 +223,42 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(root, normalize_openai_api_base(f"[{root}/chat/completions]({root}/chat/completions)"))
         self.assertEqual(root + "/chat/completions", openai_api_endpoint(root, "chat/completions"))
         self.assertEqual(root + "/embeddings", openai_api_endpoint(root + "/chat/completions", "embeddings"))
+
+    def test_html_report_keeps_upstream_style_and_background_candidates(self):
+        output = self.root / "report.html"
+        background = {
+            **copy.deepcopy(SAMPLE_PAPERS[0]),
+            "priority": "D",
+            "relevance_score": 35,
+            "semantic_score": 0.46,
+            "keyword_tier": "other",
+            "title_cn": "科学论文知识图谱构建",
+            "abstract_cn": "中文摘要。",
+            "research_track": "scholarly communication",
+            "research_question": "How are scholarly structures studied?",
+            "method_summary": "Document analysis.",
+            "main_contributions": ["Background evidence"],
+            "why_relevant": "Useful background context.",
+            "methodological_value": "Limited direct transfer.",
+            "potential_use": "Discussion",
+            "recommended_action": "save",
+            "matched_keywords": [],
+        }
+        render_report({
+            "profile": {"name": "scholarly-kg-llm"},
+            "coverage": {"from": "2026-09-02", "to": "2026-09-03"},
+            "stats": {"scanned": 1, "candidates": 1, "A": 0, "B": 0, "C": 0},
+            "judged_stats": {"scanned": 1, "candidates": 1, "A": 0, "B": 0, "C": 0, "D": 1, "Ignore": 0},
+            "report_papers": [],
+            "all_candidates": [background],
+        }, output)
+        rendered = output.read_text(encoding="utf-8")
+        self.assertIn("个人前沿论文追踪周报 / Weekly Research Brief", rendered)
+        self.assertIn("date-btn", rendered)
+        self.assertIn("stats-pools", rendered)
+        self.assertIn("其他候选 / Background &amp; Ignore", rendered)
+        self.assertIn("Methodological Value", rendered)
+        self.assertEqual(1, rendered.count('<article class="paper-card'))
 
     def test_feedback_import_updates_sqlite(self):
         result = run_pipeline(self.config(), providers=[FakeCrossrefProvider()])
