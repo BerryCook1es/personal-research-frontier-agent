@@ -1,144 +1,140 @@
-# Frontier Tracker · 前沿论文周报追踪
+# Personal Research Frontier Agent
 
-个性化顶刊文献监控流水线——从 46 本目标期刊自动抓取新论文，按 8 个研究方向池分级筛选，生成中英双语周报及多种格式输出。
+面向博士生的个人前沿论文追踪系统：多源发现 → 增量去重 → 关键词粗召回 → 可选语义筛选 → 可选 LLM 科研判断 → 个性化排序 → 中英双语科研周报 → 阅读反馈 → SQLite 长期状态。
 
-## 功能概览
+本项目基于 `shoucunren-tsy/frontier-tracker-LIS` 的 MIT 许可实现进行重构，复用了其 CrossRef 按 ISSN 抓取、OpenAlex 摘要回填、术语保护翻译、多格式输出和交互页面设计。出处与许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 和 [LICENSE](LICENSE)。本仓库不会修改或向原作者仓库提交内容。
 
-1. **扫描** — CrossRef API 按 ISSN + 日期抓取，免费、无需 API Key
-2. **筛选** — 对照自定义研究 Profile 的关键词，分为 core / proxy / eco / other 四档
-3. **翻译** — DeepSeek API（含 63 条学术术语保护，自动级联 Ollama / Google），生成中英双语内容
-4. **输出** — 五种格式：双语 HTML 报告、Excel 仪表盘、交互 HTML 表格、Markdown 笔记、终端预览
+## 能回答什么
 
-## 快速上手
+对每篇候选论文，系统保存并展示：相关研究方向、当前项目、研究问题、方法、主要贡献、推荐理由、可迁移用途、0–100 相关性、A/B/C/D/Ignore 优先级和阅读建议。LLM Judge 关闭时会退化为明确标注的关键词优先级，不伪装成深度判断。
 
-### 1. 克隆后初始化
+## 架构
 
-```bash
-# 安装依赖
-pip install -r requirements.txt
-
-# 配置翻译 API（可选但推荐，否则用 Google 翻译）
-cp .env.example .env
-# 编辑 .env，填入 DeepSeek API Key（https://platform.deepseek.com 免费注册）
-
-# 复制个人 Profile（关键词匹配规则）
-cp references/example-profile.md references/patent-biblio-profile.md
-# 编辑 profile，替换为自己的研究关键词
-
-# 复制期刊 Watchlist
-cp outputs/data/custom_watchlist.example.json outputs/data/custom_watchlist.json
-# 编辑 watchlist，增删期刊或调整研究方向池
+```text
+CrossRef journals + proceedings
+              │
+              ▼
+      DOI / title-hash dedupe ─────► SQLite papers + runs
+              │
+              ▼
+   Stage 1 Keyword Recall (命中证据)
+              │
+              ▼
+   Stage 2 Embedding Ranker (可关闭)
+              │
+              ▼
+   Stage 3 LLM Research Judge (可关闭、重试、checkpoint)
+              │
+              ▼
+    Capacity-aware A/B/C ranking
+              │
+              ├── bilingual HTML brief
+              ├── Excel dashboard
+              ├── interactive feedback app
+              ├── Markdown notes
+              └── Markdown terminal preview
+                         │
+                         ▼
+          feedback.json → SQLite feedback
 ```
 
-### 2. 运行
+主程序只负责组合模块；实际职责位于 `research_frontier_agent/providers/`、`screening/`、`translation/`、`storage/` 和 `render/`。
 
-```bash
-cd frontier-tracker-顶刊前沿论文追踪（结合自身修改）
+## 第一次运行
 
-# 一键运行（默认最近 7 天，仅生成双语 HTML 报告）
-python -X utf8 scripts/frontier_tracker.py
+Windows PowerShell：
 
-# 30 天窗口 + 全格式输出
-python -X utf8 scripts/frontier_tracker.py --days 30 --output-modes html excel app notes codex
-
-# 跳过翻译（无需 VPN）
-python -X utf8 scripts/frontier_tracker.py --skip-translate
-
-# 跳过扫描，使用已有数据
-python -X utf8 scripts/frontier_tracker.py --skip-scan --scan-file outputs/data/frontier_scan_<date>.json
+```powershell
+py -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+Copy-Item config.example.json config.local.json
+.venv\Scripts\python.exe -X utf8 scripts/frontier_tracker.py --config config.local.json
 ```
 
-> Windows 下务必使用 `python -X utf8`，否则中文期刊名/论文标题会触发 GBK 编码错误。
+`config.example.json` 默认关闭 Embedding、LLM Judge 和翻译，因而无需 Key 也能完成 CrossRef → Keyword → HTML/App/Excel/Notes。建议第一次把 `days` 临时设为 1、把 `max_per_venue` 设为 5，确认网络与输出后再恢复。
 
-## 输出格式
+## 配置 API
 
-| 格式 | 命令参数 | 输出位置 | 说明 |
-|------|----------|----------|------|
-| 双语 HTML 报告 | `html` | `outputs/reports/` | 中英对照，四级分类着色，池来源标记 |
-| Excel 仪表盘 | `excel` | `outputs/excel/` | 多 Sheet（Summary/Core/Proxy/Eco/All），条件格式，DOI 超链接 |
-| 交互 HTML 表格 | `app` | `outputs/app/` | 搜索+筛选单页应用，无需服务器 |
-| Markdown 笔记 | `notes` | `outputs/notes/` | 每篇论文一个 .md，YAML frontmatter，按 tier 分目录 |
-| 终端预览 | `codex` | `outputs/codex/` | Markdown 表格，同时打印到 stdout |
-
-## 项目结构
-
-```
-frontier-tracker/
-├── scripts/
-│   ├── _lib.py                     # 共享库（API、筛选、翻译引擎）
-│   ├── frontier_tracker.py         # 统一入口（扫描→筛选→翻译→输出）
-│   ├── scan_crossref.py            # CrossRef 期刊扫描（可独立运行）
-│   ├── screen_by_profile.py        # 关键词筛选（可独立运行）
-│   ├── render_bilingual_report.py  # 双语 HTML 报告渲染（可独立运行）
-│   ├── render_outputs.py           # 多格式输出渲染（可独立运行）
-│   └── generate_user_guide.py      # 生成使用教程 .docx
-├── references/
-│   └── patent-biblio-profile.md    # 研究兴趣关键词（core/proxy/eco 三级）
-├── outputs/
-│   ├── data/                       # 中间数据 JSON（gitignored）
-│   ├── reports/                    # HTML 报告
-│   ├── excel/                      # Excel 仪表盘
-│   ├── app/                        # 交互 HTML 表格
-│   ├── notes/                      # Markdown 笔记
-│   └── codex/                      # 终端预览
-├── state/                          # 持久化状态（gitignored）
-├── SKILL.md                        # Skill 使用说明
-├── README.md
-└── LICENSE
-```
-
-## 配置
-
-### 研究 Profile
-
-编辑 `references/patent-biblio-profile.md`，在 `## Core keywords`、`## Proxy keywords`、`## Eco-context keywords` 下用 `- keyword` 格式维护关键词。修改后无需改代码，下次运行自动生效。
-
-### 期刊 Watchlist
-
-编辑 `outputs/data/custom_watchlist.json`，每条记录包含：
+`config.local.json` 已加入 `.gitignore`。核心代码不读取环境变量；所有敏感配置都显式传入：
 
 ```json
 {
-  "journal": "Journal Name",
-  "issn": "XXXX-XXXX",
-  "family": "Parent/Family",
-  "pool": "<patent-tech-mining | bibliometrics-evaluation | science-policy-innovation | info-methods-datamining | ai-usage-behavior | complex-network-analysis | knowledge-graph-semantic | comprehensive-high-impact>",
-  "scope_note": "Brief note.",
-  "source": "custom-watchlist"
+  "embedding_enabled": true,
+  "embedding_backend": "openai-compatible",
+  "embedding_model": "your-embedding-model",
+  "embedding_api_base": "https://your-provider.example/v1",
+  "embedding_api_key": "REPLACE_LOCALLY",
+  "llm_judge_enabled": true,
+  "llm_model": "your-chat-model",
+  "api_base": "https://your-provider.example/v1",
+  "api_key": "REPLACE_LOCALLY",
+  "temperature": 0.1,
+  "translation_enabled": true,
+  "translation_backend": "openai-compatible",
+  "translation_model": "your-chat-model",
+  "translation_api_base": "https://your-provider.example/v1",
+  "translation_api_key": "REPLACE_LOCALLY"
 }
 ```
 
-ISSN 必须与 CrossRef 注册信息完全一致。
+本地 BGE-M3 / sentence-transformers 模式：额外安装 `sentence-transformers`，设置 `embedding_backend` 为 `sentence-transformers`、`embedding_model` 为本地路径或模型标识。模型不可用时本次运行自动回退到关键词阶段并记录错误，不会报废整个流水线。
 
-### 八个研究方向池（46 本期刊）
+## 三个 Profile
 
-| 池 | 数量 | 研究方向 |
-|----|------|----------|
-| `patent-tech-mining` | 4 | 专利计量与技术挖掘 |
-| `bibliometrics-evaluation` | 11 | 文献计量与科学评价 |
-| `science-policy-innovation` | 5 | 科技政策与创新 |
-| `info-methods-datamining` | 5 | 信息方法与数据挖掘 |
-| `ai-usage-behavior` | 11 | AI使用行为 |
-| `complex-network-analysis` | 3 | 复杂网络分析 |
-| `knowledge-graph-semantic` | 2 | 知识图谱与语义 |
-| `comprehensive-high-impact` | 5 | 综合高影响力 |
+```powershell
+python -X utf8 scripts/frontier_tracker.py --profile references/profile-scholarly-kg-llm.md --days 7 --enrich --embedding --llm-judge --output-modes html excel app notes
+python -X utf8 scripts/frontier_tracker.py --profile references/profile-scientometrics-evaluation.md --days 7 --enrich --embedding --llm-judge --output-modes html excel app notes
+python -X utf8 scripts/frontier_tracker.py --profile references/profile-human-ai-algorithm.md --days 7 --enrich --embedding --llm-judge --output-modes html excel app notes
+```
 
-## 四级分类
+也可在 `config.local.json` 中切换 `profile`。每个 Profile 的扫描、筛选、判断和最终输出均包含 profile name，例如：
 
-| 级别 | 含义 | 报告中颜色 | 建议动作 |
-|------|------|-----------|----------|
-| Core | 直接相关 | 绿色 | 必读 |
-| Proxy | 方法/邻近 | 黄色 | 浏览 |
-| Eco | 背景上下文 | 蓝色 | 可选 |
-| Noise | 无匹配 | 隐藏 | 跳过 |
+- `outputs/reports/frontier_weekly_bilingual_scholarly-kg-llm_2026-09-03.html`
+- `outputs/excel/frontier_dashboard_scholarly-kg-llm_2026-09-03.xlsx`
+- `outputs/app/frontier_app_scholarly-kg-llm_2026-09-03/`
+- `outputs/notes/scholarly-kg-llm/2026-09-03/`
+- `outputs/codex/frontier_preview_scholarly-kg-llm_2026-09-03.md`
 
-## 依赖
+## Project Context
 
-- Python 3.10+
-- 见 `requirements.txt`，一行安装：`pip install -r requirements.txt`
-- 所有 API 调用使用 Python 内置 `urllib`，无需额外 HTTP 库
+复制模板并填写：
 
-## 许可
+```powershell
+Copy-Item references/projects/project-template.md references/projects/structgraph.md
+python -X utf8 scripts/frontier_tracker.py --profile references/profile-scholarly-kg-llm.md --project references/projects/structgraph.md --days 7 --llm-judge --output-modes html app
+```
 
-MIT License — 见 [LICENSE](LICENSE)。
+`--project` 可重复传入。Judge 会在 `related_project` 和 `potential_use` 中说明最适合 Related Work / Method / Experiment / Discussion / New Idea 的位置。
+
+## 输出与反馈
+
+交互 App 可编辑 1–5 星、`reading_status`、note 和 related project；浏览器把数据保存在 localStorage，并可下载 `feedback.json`：
+
+```powershell
+python -X utf8 scripts/import_feedback.py path\to\feedback.json
+```
+
+状态支持 `new`、`saved`、`reading`、`read`、`ignored`、`cited`。数据库位于 `state/frontier.db`，不提交 Git。
+
+## Provider 状态
+
+- CrossRef：已实现期刊 ISSN 查询和会议 proceedings 名称查询，含 timeout、重试、错误隔离。
+- OpenAlex：已实现 DOI 批量 enrichment（摘要重建、主题标签）。
+- arXiv：TODO；Provider 接口已具备，不返回假数据。
+- Semantic Scholar：TODO；Provider 接口已具备，不返回假数据。
+
+会议 watchlist 已覆盖 ACL、EMNLP、NAACL、COLING、SIGIR、CIKM、WWW、ISWC、ESWC、AAAI、IJCAI、KDD。CrossRef 对会议论文的登记并不完整，运行结果会真实反映其覆盖；后续 arXiv / Semantic Scholar Provider 用于补齐，而不是制造记录。
+
+## 期刊与 ISSN
+
+新增的 KBS、Information Sciences、ESWA、DKE、TOIS、TKDE、TIST、Artificial Intelligence 均在 2026-09-03 通过 CrossRef `/journals/{issn}` 精确核验。未核验的候选不进入 `references/journal-watchlist.json`。
+
+## 开发与测试
+
+```powershell
+python -X utf8 -m unittest discover -s tests -v
+python -X utf8 -m compileall -q research_frontier_agent scripts tests
+```
+
+测试使用本地 fake provider / embedding / LLM / translator，不伪造生产输出，也不消耗 API 配额。
 

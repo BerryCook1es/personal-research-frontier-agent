@@ -1,0 +1,16 @@
+config.local.json
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+state/*.db
+state/*.db-*
+outputs/data/*.json
+!outputs/data/custom_watchlist.example.json
+outputs/reports/*.html
+outputs/excel/*.xlsx
+outputs/app/frontier_app_*/
+outputs/notes/*/
+outputs/codex/*.md
+
