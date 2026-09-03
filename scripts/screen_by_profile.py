@@ -10,7 +10,7 @@ Classification tiers:
 Usage:
   python -X utf8 scripts/screen_by_profile.py \
     --input outputs/data/frontier_scan_<date>.json \
-    --profile references/patent-biblio-profile.md \
+    --profile references/profile-scholarly-kg-llm.md \
     --output outputs/data/frontier_screened_<date>.json
 """
 
@@ -70,4 +70,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

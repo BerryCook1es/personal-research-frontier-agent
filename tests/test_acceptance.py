@@ -135,10 +135,13 @@ class AcceptanceTests(unittest.TestCase):
         ]
         paths = []
         for profile in profiles:
-            result = run_pipeline(self.config(profile), providers=[FakeCrossrefProvider()])
-            paths.append(Path(result["paths"]["html"]))
-        self.assertEqual(3, len(set(paths)))
-        self.assertTrue(all(path.exists() for path in paths))
+            config = self.config(profile)
+            config["output_modes"] = ["html", "excel", "app", "notes", "codex"]
+            result = run_pipeline(config, providers=[FakeCrossrefProvider()])
+            generated = [Path(result["paths"][mode]) for mode in ("html", "excel", "app", "notes", "codex")]
+            paths.extend(generated)
+            self.assertTrue(all(path.exists() for path in generated))
+        self.assertEqual(15, len(set(paths)))
 
     def test_3_incremental_run(self):
         first = run_pipeline(self.config(), providers=[FakeCrossrefProvider()])
@@ -208,4 +211,3 @@ class AcceptanceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

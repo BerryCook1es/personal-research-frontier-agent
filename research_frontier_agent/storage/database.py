@@ -125,12 +125,15 @@ class FrontierDatabase:
     def upsert_paper(self, paper: dict[str, Any], profile: str) -> tuple[int, bool]:
         stable_id = stable_paper_id(paper)
         existing = self.connection.execute(
-            "SELECT id FROM papers WHERE profile=? AND stable_id=?", (profile, stable_id)
+            "SELECT id,first_seen,reading_status FROM papers WHERE profile=? AND stable_id=?", (profile, stable_id)
         ).fetchone()
         now = utc_now()
         paper["stable_id"] = stable_id
         if existing:
             paper_id = int(existing["id"])
+            paper["reading_status"] = existing["reading_status"]
+            paper["first_seen"] = existing["first_seen"]
+            paper["last_seen"] = now
             self.connection.execute(
                 """UPDATE papers SET doi=?, title=?, abstract=?, publication_date=?, venue=?, source=?,
                    last_seen=?, paper_json=? WHERE id=?""",
@@ -155,16 +158,20 @@ class FrontierDatabase:
             )
             paper_id = int(cursor.lastrowid)
             is_new = True
+            paper["reading_status"] = "new"
+            paper["first_seen"] = now
+            paper["last_seen"] = now
         self.connection.commit()
         paper["paper_id"] = paper_id
         return paper_id, is_new
 
     def update_analysis(self, paper_id: int, paper: dict[str, Any]) -> None:
         self.connection.execute(
-            """UPDATE papers SET keyword_tier=?, semantic_score=?, relevance_score=?, priority=?,
-               research_track=?, related_project=?, paper_json=? WHERE id=?""",
+            """UPDATE papers SET title=?, abstract=?, venue=?, keyword_tier=?, semantic_score=?,
+               relevance_score=?, priority=?, research_track=?, related_project=?, paper_json=? WHERE id=?""",
             (
-                paper.get("keyword_tier", "other"), paper.get("semantic_score"),
+                paper.get("title", ""), paper.get("abstract", ""),
+                paper.get("venue") or paper.get("journal", ""), paper.get("keyword_tier", "other"), paper.get("semantic_score"),
                 paper.get("relevance_score"), paper.get("priority"), paper.get("research_track"),
                 paper.get("related_project"), json.dumps(paper, ensure_ascii=False), paper_id,
             ),
@@ -228,4 +235,3 @@ class FrontierDatabase:
                 errors.append(f"record {index}: {exc}")
         self.connection.commit()
         return imported, errors
-
