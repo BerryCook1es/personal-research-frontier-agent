@@ -53,4 +53,3 @@ def translate_papers(papers, workers=4):
 
 def translate_text(text, max_retries=2):
     return Translator(backend="auto", retries=max_retries).translate(text)
-

@@ -60,4 +60,3 @@ class OpenAlexEnricher:
             if start + 50 < len(dois):
                 time.sleep(0.15)
         return papers
-

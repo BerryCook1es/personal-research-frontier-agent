@@ -126,4 +126,3 @@ def fallback_judgment(paper: dict[str, Any]) -> dict[str, Any]:
         "why_relevant": "Keyword recall only; enable LLM Judge for a research rationale." if tier != "other" else "",
         "recommended_action": {"A": "deep-read", "B": "skim", "C": "save"}.get(priority, "ignore"),
     }
-

@@ -89,4 +89,3 @@ doi: "{paper.get('doi_url', '')}"
             if paper.get("priority") != "Ignore":
                 writer.writerow({key: paper.get(key, "") for key in fields})
     return output_path
-

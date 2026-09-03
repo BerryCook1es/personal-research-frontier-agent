@@ -126,4 +126,3 @@ class CrossrefProvider(PaperProvider):
             "source": "crossref",
             "abstract_source": "crossref" if item.get("abstract") else "",
         }
-

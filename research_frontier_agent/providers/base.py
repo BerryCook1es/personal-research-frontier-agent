@@ -12,4 +12,3 @@ class PaperProvider(ABC):
     @abstractmethod
     def discover(self, from_date: str, to_date: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Return (papers, recoverable_errors)."""
-

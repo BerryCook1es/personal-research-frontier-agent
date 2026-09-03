@@ -6,4 +6,3 @@ This compatibility module keeps the responsibility discoverable without duplicat
 from .database import FrontierDatabase
 
 __all__ = ["FrontierDatabase"]
-

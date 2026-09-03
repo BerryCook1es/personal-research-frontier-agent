@@ -48,4 +48,3 @@ def restore_terms(text: str, markers: dict[str, str]) -> str:
     for marker, translation in markers.items():
         text = text.replace(marker, translation)
     return text
-

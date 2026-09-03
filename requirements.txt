@@ -3,4 +3,3 @@ deep-translator>=1.11,<2
 
 # Optional local embedding backend (large install):
 # sentence-transformers>=3,<4
-

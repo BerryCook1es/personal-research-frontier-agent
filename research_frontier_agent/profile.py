@@ -88,4 +88,3 @@ def load_project(path: Path) -> ProjectContext:
         keywords=_bullets(_section(text, "Keywords")),
         need_to_track=_section(text, "Need to Track"),
     )
-

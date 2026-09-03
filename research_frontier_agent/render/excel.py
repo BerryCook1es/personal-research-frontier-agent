@@ -55,4 +55,3 @@ def render_excel(papers: list[dict[str, Any]], stats: dict[str, Any], output_pat
     sheet("All", papers)
     workbook.save(output_path)
     return output_path
-

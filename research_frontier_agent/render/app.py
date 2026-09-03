@@ -22,4 +22,3 @@ function downloadFeedback(){{const data=papers.map(load).filter(x=>Object.keys(x
 document.getElementById('q').oninput=render;document.getElementById('priority').onchange=render;render();</script></body></html>"""
     (output_path / "index.html").write_text(page, encoding="utf-8")
     return output_path
-

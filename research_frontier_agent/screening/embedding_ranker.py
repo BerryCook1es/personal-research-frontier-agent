@@ -64,4 +64,3 @@ class EmbeddingRanker:
         for index, paper in enumerate(ranked, 1):
             paper["semantic_rank"] = index
         return papers
-

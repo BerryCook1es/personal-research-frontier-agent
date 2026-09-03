@@ -75,4 +75,3 @@ class Translator:
                     paper.setdefault("translation_errors", []).append(str(exc))
                     paper.setdefault(field, "")
         return papers
-

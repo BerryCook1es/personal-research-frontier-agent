@@ -54,4 +54,3 @@ Use ratings and reading status as durable evidence for later Profile revision. D
 Copy `config.example.json` to ignored `config.local.json`. Pass API keys, bases, and model names through that file or explicit core-function arguments. Never add real keys to tracked files or depend on implicit environment variables in core logic.
 
 Keep `LICENSE` and `THIRD_PARTY_NOTICES.md` when redistributing substantial portions. Do not write to or open changes against the upstream repository.
-

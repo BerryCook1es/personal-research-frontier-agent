@@ -42,4 +42,3 @@ class KeywordRanker:
 
     def rank(self, papers: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [self.score(dict(paper)) for paper in papers]
-

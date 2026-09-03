@@ -78,11 +78,11 @@ def run_pipeline(
 
     try:
         if config.get("skip_screen"):
-            source_path = Path(config.get("screened_file") or paths["screened"])
+            source_path = resolve_path(config.get("screened_file") or paths["screened"])
             scan_data = read_json(source_path)
             papers = list(scan_data.get("papers") or (scan_data.get("new", []) + scan_data.get("already_seen", [])))
         elif config.get("skip_scan"):
-            source_path = Path(config.get("scan_file") or paths["scan"])
+            source_path = resolve_path(config.get("scan_file") or paths["scan"])
             scan_data = read_json(source_path)
             papers = list(scan_data.get("new", [])) + list(scan_data.get("already_seen", []))
         else:

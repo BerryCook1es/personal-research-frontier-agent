@@ -25,4 +25,3 @@ def render_preview(papers: list[dict[str, Any]], stats: dict[str, Any], output_p
         )
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return output_path
-

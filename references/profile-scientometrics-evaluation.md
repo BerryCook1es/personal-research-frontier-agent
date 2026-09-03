@@ -87,4 +87,3 @@
 - R&D investment
 - national innovation system
 - research infrastructure
-

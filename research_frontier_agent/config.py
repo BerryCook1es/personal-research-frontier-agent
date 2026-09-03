@@ -29,7 +29,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "api_base": "",
     "api_key": "",
     "temperature": 0.1,
-    "translation_enabled": True,
+    "translation_enabled": False,
     "translation_backend": "auto",
     "translation_model": "",
     "translation_api_base": "",

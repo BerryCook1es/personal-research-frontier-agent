@@ -12,4 +12,3 @@
   {"kind":"conference","venue":"International Joint Conference on Artificial Intelligence","query":"International Joint Conference on Artificial Intelligence","aliases":["IJCAI"],"pool":"llm-agent-methods","scope_note":"IJCAI proceedings for broad AI methods and agent systems."},
   {"kind":"conference","venue":"ACM SIGKDD Conference on Knowledge Discovery and Data Mining","query":"Knowledge Discovery and Data Mining","aliases":["KDD"],"pool":"llm-agent-methods","scope_note":"KDD proceedings for data mining, graph learning, and information extraction."}
 ]
-

@@ -74,4 +74,3 @@ def request_json(
                 raise
         time.sleep(min(2 ** attempt, 8))
     return {}
-
