@@ -13,6 +13,7 @@ from research_frontier_agent.providers.base import PaperProvider
 from research_frontier_agent.screening.embedding_ranker import EmbeddingRanker
 from research_frontier_agent.storage import FrontierDatabase
 from research_frontier_agent.translation import Translator
+from research_frontier_agent.utils import normalize_openai_api_base, openai_api_endpoint
 
 
 SAMPLE_PAPERS = [
@@ -191,6 +192,14 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(1.0, papers[0]["semantic_score"])
         self.assertEqual(0.0, papers[1]["semantic_score"])
         self.assertEqual(1, papers[0]["semantic_rank"])
+
+    def test_openai_compatible_endpoint_normalization(self):
+        root = "https://api.example.test/v1"
+        self.assertEqual(root, normalize_openai_api_base(root + "/chat/completions"))
+        self.assertEqual(root, normalize_openai_api_base(root + "/embeddings"))
+        self.assertEqual(root, normalize_openai_api_base(f"[{root}/chat/completions]({root}/chat/completions)"))
+        self.assertEqual(root + "/chat/completions", openai_api_endpoint(root, "chat/completions"))
+        self.assertEqual(root + "/embeddings", openai_api_endpoint(root + "/chat/completions", "embeddings"))
 
     def test_feedback_import_updates_sqlite(self):
         result = run_pipeline(self.config(), providers=[FakeCrossrefProvider()])

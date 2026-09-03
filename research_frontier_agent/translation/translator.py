@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Callable
 
 from .glossary import protect_terms, restore_terms
-from ..utils import request_json
+from ..utils import normalize_openai_api_base, openai_api_endpoint, request_json
 
 
 class Translator:
@@ -15,7 +15,7 @@ class Translator:
                  retries: int = 2, translate_fn: Callable[[str], str] | None = None):
         self.backend = backend
         self.model = model
-        self.api_base = api_base.rstrip("/")
+        self.api_base = normalize_openai_api_base(api_base)
         self.api_key = api_key
         self.temperature = temperature
         self.timeout = timeout
@@ -32,7 +32,7 @@ class Translator:
             if not self.api_base or not self.api_key or not self.model:
                 raise RuntimeError("translation model, api_base and api_key are required")
             data = request_json(
-                self.api_base + "/chat/completions",
+                openai_api_endpoint(self.api_base, "chat/completions"),
                 method="POST",
                 payload={
                     "model": self.model,

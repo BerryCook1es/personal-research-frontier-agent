@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from typing import Any, Callable
 
-from ..utils import request_json
+from ..utils import normalize_openai_api_base, openai_api_endpoint, request_json
 
 
 class EmbeddingRanker:
@@ -14,7 +14,7 @@ class EmbeddingRanker:
                  encoder: Callable[[list[str]], list[list[float]]] | None = None):
         self.backend = backend
         self.model = model
-        self.api_base = api_base.rstrip("/")
+        self.api_base = normalize_openai_api_base(api_base)
         self.api_key = api_key
         self.timeout = timeout
         self.retries = retries
@@ -34,7 +34,7 @@ class EmbeddingRanker:
             if not self.api_base or not self.api_key:
                 raise RuntimeError("embedding_api_base and embedding_api_key are required")
             data = request_json(
-                self.api_base + "/embeddings",
+                openai_api_endpoint(self.api_base, "embeddings"),
                 method="POST",
                 payload={"model": self.model, "input": texts},
                 headers={"Authorization": f"Bearer {self.api_key}"},

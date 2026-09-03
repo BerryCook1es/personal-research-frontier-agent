@@ -77,6 +77,8 @@ Copy-Item config.example.json config.local.json
 }
 ```
 
+OpenAI-compatible 地址既可填写 API 根地址（推荐，如 `https://api.siliconflow.cn/v1`），也可填写完整的 `/chat/completions` 或 `/embeddings` 端点；程序会规范化后调用正确资源。聊天与翻译请求发往 `chat/completions`，Embedding 请求发往 `embeddings`。
+
 本地 BGE-M3 / sentence-transformers 模式：额外安装 `sentence-transformers`，设置 `embedding_backend` 为 `sentence-transformers`、`embedding_model` 为本地路径或模型标识。模型不可用时本次运行自动回退到关键词阶段并记录错误，不会报废整个流水线。
 
 ## 三个 Profile
@@ -96,6 +98,8 @@ python -X utf8 scripts/frontier_tracker.py --profile references/profile-human-ai
 - `outputs/codex/frontier_preview_scholarly-kg-llm_2026-09-03.md`
 
 ## Project Context
+
+Research Profile 表示长期、较宽的研究兴趣；Project Context 表示你正在推进的某一项具体工作，例如一篇投稿、一章博士论文或一个实验。它会告诉 Judge：当前研究问题是什么、正在用什么方法、卡在哪里，以及最近特别需要追踪什么。Project Context 是可选项；`projects: []` 时系统仍会正常运行，只是不做“与当前项目的直接关联”判断。
 
 复制模板并填写：
 

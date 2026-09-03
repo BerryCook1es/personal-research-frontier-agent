@@ -15,6 +15,24 @@ ROOT = Path(__file__).resolve().parents[1]
 USER_AGENT = "personal-research-frontier-agent/1.0 (mailto:configure-your-email@example.com)"
 
 
+def normalize_openai_api_base(value: str) -> str:
+    """Return an OpenAI-compatible API root from either a root or full endpoint URL."""
+    value = (value or "").strip()
+    markdown_link = re.fullmatch(r"\[[^\]]*\]\((https?://[^)]+)\)", value)
+    if markdown_link:
+        value = markdown_link.group(1)
+    value = value.rstrip("/")
+    for suffix in ("/chat/completions", "/embeddings"):
+        if value.endswith(suffix):
+            return value[:-len(suffix)].rstrip("/")
+    return value
+
+
+def openai_api_endpoint(api_base: str, resource: str) -> str:
+    """Build one endpoint while accepting `/v1` or a previously full endpoint."""
+    return f"{normalize_openai_api_base(api_base)}/{resource.strip('/')}"
+
+
 def strip_markup(value: str) -> str:
     value = re.sub(r"<[^>]+>", " ", value or "")
     return re.sub(r"\s+", " ", html.unescape(value)).strip()

@@ -5,7 +5,7 @@ import re
 from typing import Any
 
 from ..profile import ProjectContext, ResearchProfile
-from ..utils import request_json
+from ..utils import normalize_openai_api_base, openai_api_endpoint, request_json
 
 
 REQUIRED_FIELDS: dict[str, Any] = {
@@ -32,7 +32,7 @@ class ResearchJudge:
         if not model or not api_base or not api_key:
             raise ValueError("llm_model, api_base and api_key are required when LLM Judge is enabled")
         self.model = model
-        self.api_base = api_base.rstrip("/")
+        self.api_base = normalize_openai_api_base(api_base)
         self.api_key = api_key
         self.temperature = temperature
         self.timeout = timeout
@@ -90,7 +90,7 @@ Required JSON schema:
         for _ in range(self.retries):
             try:
                 response = request_json(
-                    self.api_base + "/chat/completions",
+                    openai_api_endpoint(self.api_base, "chat/completions"),
                     method="POST",
                     payload={
                         "model": self.model,
