@@ -77,6 +77,23 @@ Copy-Item config.example.json config.local.json
 }
 ```
 
+Semantic Scholar 发现配置使用独立 Key：
+
+```json
+{
+  "data_sources": ["crossref", "semantic_scholar"],
+  "semantic_scholar_api_base": "https://api.semanticscholar.org/graph/v1",
+  "semantic_scholar_api_key": "REPLACE_LOCALLY",
+  "semantic_scholar_queries": {
+    "scholarly-kg-llm": ["scientific knowledge graph", "scientific information extraction"]
+  },
+  "semantic_scholar_max_results": 100,
+  "semantic_scholar_request_sleep": 1.1
+}
+```
+
+查询按 Profile 选择，并用 `publicationDateOrYear` 限制本次日期窗口。默认查询间隔 1.1 秒，以适配新 API Key 常见的 1 RPS 初始额度；bulk search 返回后还会在客户端严格执行 `semantic_scholar_max_results` 上限，避免宽泛查询产生过多后续 LLM 调用。
+
 OpenAI-compatible 地址既可填写 API 根地址（推荐，如 `https://api.siliconflow.cn/v1`），也可填写完整的 `/chat/completions` 或 `/embeddings` 端点；程序会规范化后调用正确资源。聊天与翻译请求发往 `chat/completions`，Embedding 请求发往 `embeddings`。
 
 本地 BGE-M3 / sentence-transformers 模式：额外安装 `sentence-transformers`，设置 `embedding_backend` 为 `sentence-transformers`、`embedding_model` 为本地路径或模型标识。模型不可用时本次运行自动回退到关键词阶段并记录错误，不会报废整个流水线。
@@ -125,9 +142,9 @@ python -X utf8 scripts/import_feedback.py path\to\feedback.json
 - CrossRef：已实现期刊 ISSN 查询和会议 proceedings 名称查询，含 timeout、重试、错误隔离。
 - OpenAlex：已实现 DOI 批量 enrichment（摘要重建、主题标签）。
 - arXiv：TODO；Provider 接口已具备，不返回假数据。
-- Semantic Scholar：TODO；Provider 接口已具备，不返回假数据。
+- Semantic Scholar：已实现 Academic Graph bulk search、日期过滤、`x-api-key` 认证、限流间隔、字段规范化和跨源 DOI/title 去重合并。
 
-会议 watchlist 已覆盖 ACL、EMNLP、NAACL、COLING、SIGIR、CIKM、WWW、ISWC、ESWC、AAAI、IJCAI、KDD。CrossRef 对会议论文的登记并不完整，运行结果会真实反映其覆盖；后续 arXiv / Semantic Scholar Provider 用于补齐，而不是制造记录。
+会议 watchlist 已覆盖 ACL、EMNLP、NAACL、COLING、SIGIR、CIKM、WWW、ISWC、ESWC、AAAI、IJCAI、KDD。CrossRef 对会议论文的登记并不完整，运行结果会真实反映其覆盖；Semantic Scholar 已用于扩展会议覆盖，后续再由 arXiv Provider 补齐预印本。
 
 ## 期刊与 ISSN
 

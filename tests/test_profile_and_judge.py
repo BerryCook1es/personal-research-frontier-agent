@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 
 from research_frontier_agent.profile import load_profile, load_project
+from research_frontier_agent.providers.semantic_scholar import SemanticScholarProvider
 from research_frontier_agent.screening.keyword_ranker import KeywordRanker
 from research_frontier_agent.screening.llm_judge import ResearchJudge
 from research_frontier_agent.utils import ROOT, stable_paper_id
@@ -49,6 +52,41 @@ class UnitTests(unittest.TestCase):
         self.assertEqual("Project Name", project.name)
         self.assertTrue(project.research_question)
         self.assertTrue(project.keywords)
+
+    def test_semantic_scholar_discovery_and_normalization(self):
+        response = {"data": [{
+            "paperId": "s2-paper-id",
+            "externalIds": {"DOI": "10.1000/S2.TEST", "ArXiv": "2609.00001"},
+            "url": "https://www.semanticscholar.org/paper/s2-paper-id",
+            "title": "Scientific knowledge graphs for scholarly documents",
+            "abstract": "A document-level extraction method.",
+            "venue": "Test Conference",
+            "year": 2026,
+            "authors": [{"name": "Ada Researcher"}],
+            "citationCount": 3,
+            "publicationDate": "2026-09-02",
+            "publicationTypes": ["Conference"],
+            "openAccessPdf": {"url": "https://example.test/paper.pdf"},
+            "fieldsOfStudy": ["Computer Science"],
+            "s2FieldsOfStudy": [{"category": "Linguistics"}],
+        }, {
+            "paperId": "must-be-truncated",
+            "title": "Second result beyond the configured cap",
+        }]}
+        with patch("research_frontier_agent.providers.semantic_scholar.request_json", return_value=response) as request:
+            provider = SemanticScholarProvider(
+                ["scientific knowledge graph"], api_key="test-key", max_results_per_query=1, sleep=0
+            )
+            papers, errors = provider.discover("2026-08-27", "2026-09-03")
+        self.assertEqual([], errors)
+        self.assertEqual(1, len(papers))
+        self.assertEqual("10.1000/s2.test", papers[0]["doi_raw"])
+        self.assertEqual("semantic_scholar", papers[0]["source"])
+        self.assertEqual("2609.00001", papers[0]["arxiv_id"])
+        url = request.call_args.args[0]
+        params = parse_qs(urlparse(url).query)
+        self.assertEqual(["2026-08-27:2026-09-03"], params["publicationDateOrYear"])
+        self.assertEqual("test-key", request.call_args.kwargs["headers"]["x-api-key"])
 
 
 if __name__ == "__main__":

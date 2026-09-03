@@ -7,7 +7,7 @@ from typing import Any
 
 from .config import resolve_path
 from .profile import ProjectContext, ResearchProfile, load_profile, load_project
-from .providers import CrossrefProvider, OpenAlexEnricher, PaperProvider
+from .providers import CrossrefProvider, OpenAlexEnricher, PaperProvider, SemanticScholarProvider
 from .render import render_app, render_excel, render_notes, render_preview, render_report
 from .render.common import output_paths
 from .screening.embedding_ranker import EmbeddingRanker
@@ -59,6 +59,32 @@ def _priority_stats(papers: list[dict[str, Any]], scanned: int, candidates: int)
     return result
 
 
+def _semantic_scholar_queries(config: dict[str, Any], profile: ResearchProfile) -> list[str]:
+    configured = config.get("semantic_scholar_queries") or {}
+    if isinstance(configured, dict):
+        configured = configured.get(profile.name, [])
+    if configured:
+        return [str(query) for query in configured]
+    return profile.core_keywords[:4]
+
+
+def _merge_discovery_records(existing: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
+    """Merge duplicate provider records while preserving richer metadata."""
+    result = dict(existing)
+    for key, value in incoming.items():
+        if key == "source":
+            sources = [part for part in str(result.get("source") or "").split(";") if part]
+            if value and value not in sources:
+                sources.append(str(value))
+            result["source"] = ";".join(sources)
+        elif key == "abstract" and len(str(value or "")) > len(str(result.get(key) or "")):
+            result[key] = value
+            result["abstract_source"] = incoming.get("abstract_source", incoming.get("source", ""))
+        elif not result.get(key) and value not in (None, "", [], {}):
+            result[key] = value
+    return result
+
+
 def run_pipeline(
     config: dict[str, Any],
     *,
@@ -102,6 +128,16 @@ def run_pipeline(
                         retries=int(config.get("request_retries", 3)),
                         sleep=float(config.get("request_sleep", 0.2)),
                     ))
+                if "semantic_scholar" in config.get("data_sources", []):
+                    providers.append(SemanticScholarProvider(
+                        _semantic_scholar_queries(config, profile),
+                        api_key=config.get("semantic_scholar_api_key", ""),
+                        api_base=config.get("semantic_scholar_api_base", "https://api.semanticscholar.org/graph/v1"),
+                        max_results_per_query=int(config.get("semantic_scholar_max_results", 100)),
+                        timeout=float(config.get("request_timeout", 30)),
+                        retries=int(config.get("request_retries", 3)),
+                        sleep=float(config.get("semantic_scholar_request_sleep", 1.1)),
+                    ))
             papers = []
             for provider in providers or []:
                 found, provider_errors = provider.discover(from_date, to_date)
@@ -109,7 +145,11 @@ def run_pipeline(
                 errors.extend(provider_errors)
             unique: dict[str, dict[str, Any]] = {}
             for paper in papers:
-                unique.setdefault(stable_paper_id(paper), paper)
+                paper_id = stable_paper_id(paper)
+                if paper_id in unique:
+                    unique[paper_id] = _merge_discovery_records(unique[paper_id], paper)
+                else:
+                    unique[paper_id] = paper
             papers = list(unique.values())
 
         new_papers: list[dict[str, Any]] = []

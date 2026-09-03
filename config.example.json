@@ -5,6 +5,15 @@
   "data_sources": ["crossref"],
   "watchlist": "references/journal-watchlist.json",
   "conference_watchlist": "references/conference-watchlist.json",
+  "semantic_scholar_api_base": "https://api.semanticscholar.org/graph/v1",
+  "semantic_scholar_api_key": "",
+  "semantic_scholar_queries": {
+    "scholarly-kg-llm": ["scientific knowledge graph", "scientific information extraction", "LLM information extraction", "scholarly document processing"],
+    "scientometrics-evaluation": ["bibliometrics research evaluation", "science of science", "citation analysis", "research integrity open science"],
+    "human-ai-algorithm": ["human AI interaction", "AI trust algorithm aversion", "generative AI usage", "human AI decision making"]
+  },
+  "semantic_scholar_max_results": 100,
+  "semantic_scholar_request_sleep": 1.1,
   "enrich": true,
   "embedding_enabled": false,
   "embedding_backend": "sentence-transformers",

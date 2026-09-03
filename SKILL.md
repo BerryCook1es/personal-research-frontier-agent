@@ -25,7 +25,7 @@ For explicit runs, pass `--profile`, repeatable `--project`, `--days`, optional 
 
 The decision sequence is:
 
-1. Discover real records through configured providers. CrossRef is implemented; OpenAlex enriches DOI records.
+1. Discover real records through configured providers. CrossRef and Semantic Scholar Academic Graph are implemented; OpenAlex enriches DOI records. Respect Semantic Scholar's configured request interval and never expose its API key.
 2. Upsert to `state/frontier.db`, using normalized DOI first and stable title hash otherwise.
 3. Run keyword recall and retain `core_hits`, `proxy_hits`, `eco_hits`, and `matched_keywords`.
 4. If enabled, compute semantic similarity through the configured `EmbeddingRanker`. A missing optional model must fall back to keyword-only screening.

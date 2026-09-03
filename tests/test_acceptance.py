@@ -182,6 +182,25 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(3, len(rows))
         self.assertTrue(all(row[1] and row[2] and row[3] == "new" for row in rows))
 
+    def test_cross_source_duplicate_merges_richer_metadata(self):
+        crossref = copy.deepcopy(SAMPLE_PAPERS[0])
+        crossref["abstract"] = ""
+        semantic_scholar = copy.deepcopy(SAMPLE_PAPERS[0])
+        semantic_scholar.update({
+            "source": "semantic_scholar",
+            "abstract": "A richer abstract supplied by the second provider for scientific knowledge graph construction.",
+            "abstract_source": "semantic_scholar",
+            "s2_paper_id": "s2-test",
+        })
+        result = run_pipeline(
+            self.config(),
+            providers=[FakeCrossrefProvider([crossref]), FakeCrossrefProvider([semantic_scholar])],
+        )
+        self.assertEqual(1, result["new_count"])
+        self.assertEqual("crossref;semantic_scholar", result["all_candidates"][0]["source"])
+        self.assertEqual("semantic_scholar", result["all_candidates"][0]["abstract_source"])
+        self.assertEqual("s2-test", result["all_candidates"][0]["s2_paper_id"])
+
     def test_embedding_ranker_normalizes_and_ranks(self):
         ranker = EmbeddingRanker(
             backend="test", model="test",
