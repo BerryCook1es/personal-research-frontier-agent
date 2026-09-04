@@ -12,6 +12,7 @@ from .render import render_app, render_excel, render_notes, render_preview, rend
 from .render.common import output_paths
 from .screening.embedding_ranker import EmbeddingRanker
 from .screening.keyword_ranker import KeywordRanker
+from .screening.venue_filter import is_excluded_journal
 from .screening.llm_judge import JUDGE_SCHEMA_VERSION, ResearchJudge, fallback_judgment
 from .storage import FrontierDatabase
 from .translation import Translator
@@ -155,6 +156,10 @@ def run_pipeline(
                     unique[paper_id] = paper
             papers = list(unique.values())
 
+        excluded_journals = config.get("excluded_journals") or []
+        excluded_count = sum(is_excluded_journal(paper, excluded_journals) for paper in papers)
+        papers = [paper for paper in papers if not is_excluded_journal(paper, excluded_journals)]
+
         new_papers: list[dict[str, Any]] = []
         already_seen: list[dict[str, Any]] = []
         for paper in papers:
@@ -189,6 +194,8 @@ def run_pipeline(
             "already_seen": already_seen,
             "source_errors": errors,
             "data_sources": config.get("data_sources", ["crossref"]),
+            "excluded_journals": excluded_journals,
+            "excluded_count": excluded_count,
         }
         write_json(paths["scan"], scan_data)
 
@@ -296,6 +303,8 @@ def run_pipeline(
             "all_candidates": sorted(candidates, key=lambda p: p.get("relevance_score", 0), reverse=True),
             "new_count": len(new_papers),
             "already_seen_count": len(already_seen),
+            "excluded_journals": excluded_journals,
+            "excluded_count": excluded_count,
             "errors": errors,
             "paths": {key: str(value) for key, value in paths.items()},
         }

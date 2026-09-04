@@ -16,6 +16,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "to_date": None,
     "data_sources": ["crossref"],
     "watchlist": "references/journal-watchlist.json",
+    "excluded_journals": ["PLOS ONE"],
     "conference_watchlist": "references/conference-watchlist.json",
     "semantic_scholar_api_base": "https://api.semanticscholar.org/graph/v1",
     "semantic_scholar_api_key": "",

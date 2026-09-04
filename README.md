@@ -130,6 +130,13 @@ python -X utf8 scripts/frontier_tracker.py --profile references/profile-scholarl
 
 ## 输出与反馈
 
+### 排除不想追踪的期刊
+
+在 `config.local.json` 中设置 `"excluded_journals": ["PLOS ONE"]`。
+该规则对三个 Profile、所有发现源及读取扫描检查点的运行统一生效，在入库和科研分析之前过滤。
+期刊名称匹配忽略大小写、空格和标点；PLOS ONE 还通过其专属 DOI 前缀补充识别，不排除其他 PLOS 期刊。
+已有数据库历史与阅读反馈不会被删除。修改配置不会自动重写以前生成的报告。
+
 交互 App 可编辑 1–5 星、`reading_status`、note 和 related project；浏览器把数据保存在 localStorage，并可下载 `feedback.json`：
 
 ```powershell

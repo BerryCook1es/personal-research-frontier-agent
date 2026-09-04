@@ -12,6 +12,7 @@ from research_frontier_agent.pipeline import run_pipeline
 from research_frontier_agent.providers.base import PaperProvider
 from research_frontier_agent.render.report import render_report
 from research_frontier_agent.screening.embedding_ranker import EmbeddingRanker
+from research_frontier_agent.screening.venue_filter import is_excluded_journal
 from research_frontier_agent.storage import FrontierDatabase
 from research_frontier_agent.translation import Translator
 from research_frontier_agent.utils import normalize_openai_api_base, openai_api_endpoint
@@ -128,6 +129,36 @@ class AcceptanceTests(unittest.TestCase):
         self.assertIn("前沿论文追踪周报·Frontier Weekly", html_path.read_text(encoding="utf-8"))
         self.assertTrue(all(p.get("core_hits") is not None for p in result["all_candidates"]))
         self.assertTrue(any(p.get("title_cn", "").startswith("中译:") for p in result["all_candidates"]))
+
+    def test_journal_exclusion_matches_aliases_without_excluding_other_plos_journals(self):
+        for paper in ({"venue": "PLoS ONE"}, {"journal": "PLOS  One"},
+                      {"journal_source": "plos-one"},
+                      {"doi_url": "https://doi.org/10.1371/journal.pone.0357186"}):
+            with self.subTest(paper=paper):
+                self.assertTrue(is_excluded_journal(paper, ["PLOS ONE"]))
+        self.assertFalse(is_excluded_journal({"venue": "PLOS Biology", "doi": "10.1371/journal.pbio.123"}, ["PLOS ONE"]))
+        self.assertFalse(is_excluded_journal({"title": "A study of PLOS ONE", "venue": "Scientometrics"}, ["PLOS ONE"]))
+        self.assertFalse(is_excluded_journal({"venue": "PLOS ONE"}, []))
+
+    def test_journal_exclusion_applies_before_analysis_and_to_resumed_scans(self):
+        blocked = {**copy.deepcopy(SAMPLE_PAPERS[0]), "venue": "PLoS ONE",
+                   "journal": "PLoS ONE", "doi_raw": "10.1371/journal.pone.123", "source": "semantic_scholar"}
+        papers = [copy.deepcopy(SAMPLE_PAPERS[0]), blocked]
+        for mode in ("live", "skip_scan", "skip_screen"):
+            with self.subTest(mode=mode):
+                config = self.config()
+                if mode != "live":
+                    source = self.root / (mode + ".json")
+                    source.write_text(json.dumps({"new": papers, "already_seen": [], "papers": papers}), encoding="utf-8")
+                    config[mode] = True
+                    config["scan_file" if mode == "skip_scan" else "screened_file"] = str(source)
+                result = run_pipeline(config, providers=[FakeCrossrefProvider(papers)])
+                self.assertEqual(1, result["excluded_count"])
+                self.assertEqual(1, result["stats"]["scanned"])
+                self.assertFalse(any(is_excluded_journal(p, ["PLOS ONE"]) for p in result["all_candidates"]))
+                self.assertNotIn('data-venue="PLoS ONE"', Path(result["paths"]["html"]).read_text(encoding="utf-8"))
+        with sqlite3.connect(self.root / "frontier.db") as conn:
+            self.assertEqual(0, conn.execute("SELECT COUNT(*) FROM papers WHERE venue='PLoS ONE'").fetchone()[0])
 
     def test_2_three_profiles_do_not_overwrite(self):
         profiles = [
