@@ -10,9 +10,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from . import __version__
+
 
 ROOT = Path(__file__).resolve().parents[1]
-USER_AGENT = "personal-research-frontier-agent/1.0 (mailto:configure-your-email@example.com)"
+USER_AGENT = f"personal-research-frontier-agent/{__version__}"
 
 
 def normalize_openai_api_base(value: str) -> str:

@@ -1,11 +1,25 @@
 ---
 name: research-frontier-agent
-description: Track and judge new scholarly papers against one or more personal Research Profiles and active Project Contexts, then generate capacity-limited research briefs and learn from reading feedback. Use for recurring literature discovery, research-frontier scans, paper triage, or personalized doctoral reading reports; do not use as a source of unverified bibliographic facts.
+description: Discover and screen scholarly papers for personal Research Profiles and optional projects, generate bilingual research reports, and record reading feedback. Use for literature tracking, paper triage, and doctoral reading reports, not as a source of verified full-text findings.
 ---
 
 # Research Frontier Agent
 
 Use the repository pipeline to turn recent metadata into an auditable, personalized reading queue. Treat provider metadata and model judgments as evidence that still requires researcher verification.
+
+## Locate and prepare the installation
+
+Locate the project root containing this file, `config.example.json`, `scripts/`, and
+`research_frontier_agent/`; run commands from that root. A copy of SKILL.md alone
+is not a working installation. The repo-scoped entrypoint is
+`.agents/skills/research-frontier-agent/SKILL.md`.
+
+Use the project's `.venv` Python if available (Windows: `.venv/Scripts/python.exe`;
+Linux/macOS: `.venv/bin/python`). Otherwise check Python 3.9+ and follow the
+installation section in README.md. Create config.local.json from the example only
+if it does not already exist; never overwrite an existing private configuration.
+Never print configuration secrets. With no API credentials, keep the paid stages
+disabled and report that judgments are keyword-only.
 
 ## Choose context
 
@@ -21,7 +35,10 @@ Prefer the single entrypoint:
 python -X utf8 scripts/frontier_tracker.py --config config.local.json
 ```
 
-For explicit runs, pass `--profile`, repeatable `--project`, `--days`, optional `--enrich`, `--embedding`, `--llm-judge`, and `--output-modes`.
+Keep `--config config.local.json` when adding `--profile`, repeatable `--project`, `--days`, optional `--enrich`, `--embedding`, `--llm-judge`, and `--output-modes`.
+Honor excluded_journals across providers and resumed scans. Report API errors and
+fallbacks rather than treating an exit code of zero as proof that every source succeeded.
+Do not create a schedule or publish reports unless the user asks for those actions.
 
 The decision sequence is:
 
@@ -30,7 +47,7 @@ The decision sequence is:
 3. Run keyword recall and retain `core_hits`, `proxy_hits`, `eco_hits`, and `matched_keywords`.
 4. If enabled, compute semantic similarity through the configured `EmbeddingRanker`. A missing optional model must fall back to keyword-only screening.
 5. If enabled, ask `ResearchJudge` for strict JSON. Reuse completed SQLite checkpoints; preserve raw and parsed responses; let a single-paper failure fall back without aborting the run.
-6. Rank by research relevance and enforce Profile/config limits for A, B, and C papers.
+6. Rank by research relevance. Capacity limits apply to the reading queue, Markdown notes and preview. HTML, Excel and App intentionally retain all classified candidates, including background papers, for filtering.
 7. Translate independently from judgment, then generate the requested report, workbook, app, notes, and preview.
 
 ## Judgment rules
@@ -48,6 +65,10 @@ python -X utf8 scripts/import_feedback.py path/to/feedback.json
 ```
 
 Use ratings and reading status as durable evidence for later Profile revision. Do not silently rewrite Profile keywords from one feedback item; summarize repeated patterns and propose bounded edits for researcher review.
+There is no automatic interest-weight training or autonomous Profile update in this
+beta. Feedback persistence is not equivalent to a trained personalization model.
+arXiv has no independent provider yet; incidental Semantic Scholar arXiv records
+do not imply complete preprint coverage.
 
 ## Configuration and safety
 
