@@ -5,6 +5,7 @@ import json
 import sqlite3
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
 
 from research_frontier_agent.config import load_config
@@ -157,7 +158,7 @@ class AcceptanceTests(unittest.TestCase):
                 self.assertEqual(1, result["stats"]["scanned"])
                 self.assertFalse(any(is_excluded_journal(p, ["PLOS ONE"]) for p in result["all_candidates"]))
                 self.assertNotIn('data-venue="PLoS ONE"', Path(result["paths"]["html"]).read_text(encoding="utf-8"))
-        with sqlite3.connect(self.root / "frontier.db") as conn:
+        with closing(sqlite3.connect(self.root / "frontier.db")) as conn:
             self.assertEqual(0, conn.execute("SELECT COUNT(*) FROM papers WHERE venue='PLoS ONE'").fetchone()[0])
 
     def test_2_three_profiles_do_not_overwrite(self):
@@ -209,7 +210,7 @@ class AcceptanceTests(unittest.TestCase):
         config = self.config()
         result = run_pipeline(config, providers=[FakeCrossrefProvider(SAMPLE_PAPERS + [duplicate])])
         self.assertEqual(3, result["new_count"])
-        with sqlite3.connect(self.root / "frontier.db") as connection:
+        with closing(sqlite3.connect(self.root / "frontier.db")) as connection:
             rows = connection.execute("SELECT doi,first_seen,last_seen,reading_status FROM papers").fetchall()
         self.assertEqual(3, len(rows))
         self.assertTrue(all(row[1] and row[2] and row[3] == "new" for row in rows))

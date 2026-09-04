@@ -91,7 +91,8 @@ def export(ref: str, version: str) -> Path:
     sha, files = collect(ref)
     destination = ROOT / "release" / "github" / version
     archive = destination.with_suffix(destination.suffix + ".zip")
-    if destination.exists() or archive.exists():
+    manifest_path = destination.parent / (version + ".manifest.json")
+    if destination.exists() or archive.exists() or manifest_path.exists():
         raise ValueError("Release destination already exists; choose a new version (no overwrite)")
     destination.mkdir(parents=True)
     for name, data in files.items():
@@ -101,7 +102,6 @@ def export(ref: str, version: str) -> Path:
     manifest = {"version": version, "commit": sha, "files": {
         name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())
     }}
-    manifest_path = destination.parent / (version + ".manifest.json")
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     with zipfile.ZipFile(archive, "x", zipfile.ZIP_DEFLATED) as bundle:
         for name, data in files.items():

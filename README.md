@@ -51,7 +51,7 @@ Windows PowerShell：
 git clone https://github.com/BerryCook1es/personal-research-frontier-agent.git
 cd personal-research-frontier-agent
 git checkout v0.1.0-beta
-py -m venv .venv
+python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 if (-not (Test-Path config.local.json)) { Copy-Item config.example.json config.local.json }
 .venv\Scripts\python.exe -X utf8 scripts/frontier_tracker.py --config config.local.json
