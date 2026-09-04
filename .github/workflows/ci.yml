@@ -1,0 +1,62 @@
+name: CI
+on:
+  push:
+    branches: [main, 'feat/**', 'codex/**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.9', '3.12']
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pip check
+      - run: python -X utf8 -m unittest discover -s tests -v
+      - run: python -X utf8 -m compileall -q research_frontier_agent scripts tests
+      - run: python -X utf8 scripts/frontier_tracker.py --help
+      - run: python -X utf8 scripts/check_skill.py
+      - run: python -X utf8 scripts/build_release.py --check-only --history
+
+  publish-beta:
+    if: github.event_name == 'push' && github.ref == 'refs/tags/v0.1.0-beta'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -X utf8 scripts/build_release.py --ref v0.1.0-beta --version v0.1.0-beta --history
+      - name: Publish verified beta source archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create v0.1.0-beta
+          release/github/v0.1.0-beta.zip
+          release/github/v0.1.0-beta.manifest.json
+          --verify-tag --prerelease --title 'v0.1.0-beta'
+          --notes-file docs/releases/v0.1.0-beta.md
