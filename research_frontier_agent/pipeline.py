@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -28,11 +29,17 @@ def _dates(config: dict[str, Any]) -> tuple[str, str]:
     return from_date, to_date
 
 
-def _context_hash(profile: ResearchProfile, projects: list[ProjectContext], model: str, judge_version: str) -> str:
-    source = (
-        profile.description + "\n" + "\n".join(project.to_prompt() for project in projects)
-        + "\n" + model + "\n" + judge_version
-    )
+def _context_hash(profile: ResearchProfile, projects: list[ProjectContext], model: str,
+                  judge_version: str, paper: dict[str, Any], api_base: str = "",
+                  temperature: float = 0.1) -> str:
+    # Every input to the judge participates; keys and local paths never do.
+    source = json.dumps({
+        "profile": profile.description, "projects": [p.to_prompt() for p in projects],
+        "model": model, "version": judge_version, "api_base": api_base, "temperature": temperature,
+        "paper": {key: paper.get(key) for key in (
+            "title", "abstract", "venue", "journal", "matched_keywords", "keyword_tier", "semantic_score"
+        )},
+    }, ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(source.encode("utf-8")).hexdigest()
 
 
@@ -241,7 +248,6 @@ def run_pipeline(
                 judge_enabled = False
 
         judge_version = getattr(judge, "cache_version", JUDGE_SCHEMA_VERSION)
-        context_hash = _context_hash(profile, projects, config.get("llm_model", ""), judge_version)
         for paper in papers:
             if paper not in candidates:
                 paper.update(fallback_judgment(paper))
@@ -250,6 +256,11 @@ def run_pipeline(
             parsed: dict[str, Any]
             raw = ""
             if judge_enabled and judge is not None:
+                context_hash = _context_hash(
+                    profile, projects, judge.model, judge_version, paper,
+                    getattr(judge, "api_base", config.get("api_base", "")),
+                    getattr(judge, "temperature", float(config.get("temperature", 0.1))),
+                )
                 cached = database.get_completed_judgment(paper["paper_id"], context_hash, judge.model)
                 if cached:
                     raw, parsed = cached
@@ -262,6 +273,7 @@ def run_pipeline(
                         )
                         paper["judge_checkpoint"] = "completed"
                     except Exception as exc:
+                        raw = getattr(exc, "raw_response", "")
                         errors.append({"stage": "llm_judge", "paper": paper.get("stable_id"), "error": str(exc)})
                         database.save_judgment(
                             paper["paper_id"], context_hash, judge.model, status="failed", raw_response=raw, error=str(exc)

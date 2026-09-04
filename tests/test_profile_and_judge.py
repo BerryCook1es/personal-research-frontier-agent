@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+import json
 from pathlib import Path
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
@@ -8,7 +9,7 @@ from urllib.parse import parse_qs, urlparse
 from research_frontier_agent.profile import load_profile, load_project
 from research_frontier_agent.providers.semantic_scholar import SemanticScholarProvider
 from research_frontier_agent.screening.keyword_ranker import KeywordRanker
-from research_frontier_agent.screening.llm_judge import ResearchJudge
+from research_frontier_agent.screening.llm_judge import ResearchJudge, REQUIRED_FIELDS
 from research_frontier_agent.utils import ROOT, stable_paper_id
 
 
@@ -36,7 +37,8 @@ class UnitTests(unittest.TestCase):
         self.assertEqual(set(paper["matched_keywords"]), set(paper["core_hits"] + paper["proxy_hits"]))
 
     def test_llm_json_validation(self):
-        parsed = ResearchJudge.parse_response('```json\n{"relevance_score":94,"priority":"A","recommended_action":"deep-read"}\n```')
+        valid = {**REQUIRED_FIELDS, "relevance_score": 94, "priority": "A", "recommended_action": "deep-read"}
+        parsed = ResearchJudge.parse_response('```json\n' + json.dumps(valid) + '\n```')
         self.assertEqual(94, parsed["relevance_score"])
         self.assertEqual([], parsed["main_contributions"])
         with self.assertRaises(ValueError):
